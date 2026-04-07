@@ -1,0 +1,21 @@
+# 환경변수
+.env
+
+# 설계 문서
+research.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# 생성된 스크립트 출력물
+output/
+
+# 로그
+logs/
+
+# DB (로컬 테스트용)
+*.db
