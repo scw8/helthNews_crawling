@@ -1,0 +1,125 @@
+crawl:
+  request_delay_seconds: 2      # 서버 부하 방지 요청 간격
+  timeout_seconds: 15
+  max_retries: 3
+  days_to_keep: 90              # DB에 90일치 기사 보관
+
+sources:
+  rss:
+    - name: health_chosun
+      url: "https://health.chosun.com/rss/index.html"
+      enabled: true
+    - name: mdtoday
+      url: "https://www.mdtoday.co.kr/rss/allArticle.xml"
+      enabled: true
+    - name: kormedi
+      url: "https://kormedi.com/feed/"
+      enabled: true
+
+  html:
+    - name: kdca
+      list_url: "https://www.kdca.go.kr/board/board.es?mid=a20501000000&bid=0015"
+      enabled: true
+    - name: nhis
+      list_url: "https://www.nhis.or.kr/nhis/together/wbhaec07100m01.do"
+      enabled: true
+    - name: snuh
+      list_url: "https://www.snuh.org/health/nMedInfo/nList.do"
+      enabled: true
+
+  api:
+    - name: pubmed
+      search_terms:
+        - "diabetes mellitus elderly Korean"
+        - "hypertension elderly management Korean"
+        - "dementia prevention lifestyle elderly"
+        - "osteoarthritis elderly treatment"
+        - "vitamin D deficiency elderly Korean"
+        - "cholesterol management elderly"
+      max_results_per_query: 10
+      enabled: true
+
+keywords:
+  당뇨:
+    primary:
+      - "당뇨병"
+      - "혈당"
+      - "인슐린"
+      - "당화혈색소"
+      - "저혈당"
+      - "제2형 당뇨"
+    secondary:
+      - "탄수화물"
+      - "혈당 스파이크"
+      - "메트포르민"
+      - "당뇨 합병증"
+
+  고혈압:
+    primary:
+      - "고혈압"
+      - "혈압"
+      - "수축기"
+      - "강압제"
+      - "혈압약"
+    secondary:
+      - "나트륨"
+      - "심혈관"
+      - "뇌졸중"
+      - "칼슘길항제"
+
+  고지혈증:
+    primary:
+      - "고지혈증"
+      - "콜레스테롤"
+      - "중성지방"
+      - "LDL"
+      - "스타틴"
+    secondary:
+      - "동맥경화"
+      - "이상지질혈증"
+      - "HDL"
+
+  관절:
+    primary:
+      - "퇴행성 관절염"
+      - "무릎"
+      - "골관절염"
+      - "연골"
+      - "골다공증"
+    secondary:
+      - "디스크"
+      - "척추협착"
+      - "관절통"
+
+  치매:
+    primary:
+      - "치매"
+      - "알츠하이머"
+      - "경도인지장애"
+      - "인지저하"
+      - "기억력"
+    secondary:
+      - "뇌 건강"
+      - "인지 기능"
+      - "베타아밀로이드"
+
+  영양제:
+    primary:
+      - "영양제"
+      - "건강기능식품"
+      - "오메가3"
+      - "비타민D"
+      - "마그네슘"
+    secondary:
+      - "약물 상호작용"
+      - "영양보충"
+      - "프로바이오틱스"
+
+quality:
+  min_score: 0.3                # 이 점수 미만은 저장하지 않음
+  priority_score: 0.7           # 스크립트 생성 시 우선 사용
+
+generate:
+  max_articles_per_topic: 15    # 스크립트 생성 시 참고할 최대 기사 수
+  default_days: 60              # 기본적으로 최근 60일치 기사 사용
+  output_dir: "output/scripts"
