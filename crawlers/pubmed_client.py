@@ -59,17 +59,20 @@ def fetch_abstracts(pmids: list[str], api_key: Optional[str]) -> list[dict]:
         from bs4 import BeautifulSoup
         resp = requests.get(PUBMED_EFETCH, params=params, timeout=15)
         resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "xml")
+        soup = BeautifulSoup(resp.text, features="xml")
 
         articles = []
         for article in soup.find_all("PubmedArticle"):
             pmid = article.find("PMID")
             title = article.find("ArticleTitle")
-            abstract = article.find("AbstractText")
+            # AbstractText가 여러 개인 경우 전부 이어붙임
+            abstract_tags = article.find_all("AbstractText")
             pub_date = article.find("PubDate")
 
-            if not (pmid and title and abstract):
+            if not (pmid and title and abstract_tags):
                 continue
+
+            abstract_text = " ".join(t.get_text(strip=True) for t in abstract_tags)
 
             # 발행일 파싱
             published_at = None
@@ -86,7 +89,7 @@ def fetch_abstracts(pmids: list[str], api_key: Optional[str]) -> list[dict]:
             articles.append({
                 "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid.text}/",
                 "title": title.get_text(strip=True),
-                "content": abstract.get_text(strip=True),
+                "content": abstract_text,
                 "published_at": published_at,
             })
 

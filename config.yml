@@ -18,6 +18,9 @@ sources:
     - name: who
       url: "https://www.who.int/rss-feeds/news-english.xml"
       enabled: true
+    - name: sciencedaily
+      url: "https://www.sciencedaily.com/rss/health_medicine.xml"
+      enabled: true
 
   html:
     - name: kdca
