@@ -27,7 +27,7 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: 의존성 설치
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-crawl.txt
 
       - name: 크롤러 실행
         env:
