@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>건강 유튜브 스크립트 생성기</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    header p {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .card {
+      background: #1e2333;
+      border: 1px solid #2d3748;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    /* 주제 버튼 */
+    .topic-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .topic-btn {
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: 1.5px solid #2d3748;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .topic-btn:hover {
+      border-color: #4f6ef7;
+      color: #c7d2fe;
+    }
+    .topic-btn.active {
+      background: #4f6ef7;
+      border-color: #4f6ef7;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* 옵션 */
+    .options-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .options-row label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    select {
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* 생성 버튼 */
+    #generate-btn {
+      width: 100%;
+      padding: 14px;
+      background: #4f6ef7;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #generate-btn:hover:not(:disabled) { background: #3b5bdb; }
+    #generate-btn:disabled { background: #2d3748; color: #64748b; cursor: not-allowed; }
+
+    /* 상태 표시 */
+    #status {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: #64748b;
+      min-height: 20px;
+      text-align: center;
+    }
+    #status.error { color: #f87171; }
+
+    /* 결과 영역 */
+    #result-section {
+      display: none;
+      margin-top: 32px;
+    }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .result-header span {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .action-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .action-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid #2d3748;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .action-btn:hover { border-color: #4f6ef7; color: #c7d2fe; }
+    .action-btn.copied { border-color: #22c55e; color: #22c55e; }
+
+    #output {
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 24px;
+      font-size: 0.875rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 600px;
+      overflow-y: auto;
+      color: #cbd5e1;
+    }
+
+    /* 스크롤바 */
+    #output::-webkit-scrollbar { width: 6px; }
+    #output::-webkit-scrollbar-track { background: transparent; }
+    #output::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+
+    /* 로딩 점 애니메이션 */
+    .dot-loader::after {
+      content: '';
+      animation: dots 1.2s steps(3, end) infinite;
+    }
+    @keyframes dots {
+      0%   { content: ''; }
+      33%  { content: '.'; }
+      66%  { content: '..'; }
+      100% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>건강 유튜브 스크립트 생성기</h1>
+  <p>공신력 있는 건강 정보를 바탕으로 55~70세 시니어 대상 15분 롱폼 스크립트를 생성합니다.</p>
+</header>
+
+<div class="card">
+  <div class="section-label">주제 선택</div>
+  <div class="topic-grid">
+    {% for topic in topics %}
+    <button class="topic-btn" data-topic="{{ topic }}">{{ topic }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="section-label">옵션</div>
+  <div class="options-row">
+    <label>
+      수집 기간
+      <select id="days-select">
+        <option value="30">최근 30일</option>
+        <option value="60" selected>최근 60일</option>
+        <option value="90">최근 90일</option>
+      </select>
+    </label>
+    <label>
+      최대 참고 기사
+      <select id="limit-select">
+        <option value="10">10건</option>
+        <option value="15" selected>15건</option>
+        <option value="20">20건</option>
+      </select>
+    </label>
+  </div>
+
+  <button id="generate-btn" disabled>주제를 선택하세요</button>
+  <div id="status"></div>
+
+  <div id="result-section">
+    <div class="result-header">
+      <span id="result-meta"></span>
+      <div class="action-btns">
+        <button class="action-btn" id="copy-btn">복사</button>
+        <button class="action-btn" id="download-btn">다운로드</button>
+      </div>
+    </div>
+    <div id="output"></div>
+  </div>
+</div>
+
+<script>
+  let selectedTopic = null;
+  let fullScript = "";
+
+  // 주제 버튼
+  document.querySelectorAll(".topic-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedTopic = btn.dataset.topic;
+      const genBtn = document.getElementById("generate-btn");
+      genBtn.disabled = false;
+      genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+    });
+  });
+
+  // 생성 버튼
+  document.getElementById("generate-btn").addEventListener("click", async () => {
+    if (!selectedTopic) return;
+
+    const days = document.getElementById("days-select").value;
+    const limit = document.getElementById("limit-select").value;
+
+    const genBtn = document.getElementById("generate-btn");
+    const status = document.getElementById("status");
+    const resultSection = document.getElementById("result-section");
+    const output = document.getElementById("output");
+    const resultMeta = document.getElementById("result-meta");
+
+    // 초기화
+    genBtn.disabled = true;
+    genBtn.textContent = "생성 중...";
+    status.className = "dot-loader";
+    status.textContent = "기사 조회 중";
+    resultSection.style.display = "none";
+    output.textContent = "";
+    fullScript = "";
+
+    const url = `/generate?topic=${encodeURIComponent(selectedTopic)}&days=${days}&limit=${limit}`;
+    const eventSource = new EventSource(url);
+
+    eventSource.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+
+      if (data.error) {
+        status.className = "error";
+        status.textContent = data.error;
+        genBtn.disabled = false;
+        genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+        eventSource.close();
+        return;
+      }
+
+      if (data.meta) {
+        status.className = "dot-loader";
+        status.textContent = `참고 기사 ${data.meta.article_count}건 · Claude가 스크립트 작성 중`;
+        resultMeta.textContent = `주제: ${data.meta.topic} · 참고 기사 ${data.meta.article_count}건`;
+        resultSection.style.display = "block";
+        return;
+      }
+
+      if (data.text) {
+        fullScript += data.text;
+        output.textContent = fullScript;
+        output.scrollTop = output.scrollHeight;
+        return;
+      }
+
+      if (data.done) {
+        fullScript = data.full_text;
+        status.className = "";
+        status.textContent = "생성 완료!";
+        genBtn.disabled = false;
+        genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = () => {
+      status.className = "error";
+      status.textContent = "연결 오류가 발생했습니다. 다시 시도해주세요.";
+      genBtn.disabled = false;
+      genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+      eventSource.close();
+    };
+  });
+
+  // 복사 버튼
+  document.getElementById("copy-btn").addEventListener("click", async () => {
+    if (!fullScript) return;
+    await navigator.clipboard.writeText(fullScript);
+    const btn = document.getElementById("copy-btn");
+    btn.textContent = "복사됨!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "복사"; btn.classList.remove("copied"); }, 2000);
+  });
+
+  // 다운로드 버튼
+  document.getElementById("download-btn").addEventListener("click", () => {
+    if (!fullScript || !selectedTopic) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([fullScript], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${today}_${selectedTopic}.txt`;
+    a.click();
+  });
+</script>
+</body>
+</html>
