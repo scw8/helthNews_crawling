@@ -1,8 +1,8 @@
 import logging
-import re
-from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urljoin
+
+import feedparser
 
 from crawlers.base_crawler import BaseCrawler
 
@@ -10,35 +10,29 @@ logger = logging.getLogger(__name__)
 
 
 class KDCACrawler(BaseCrawler):
-    """질병관리청 보도자료 크롤러"""
+    """질병관리청 보도자료 크롤러 - RSS 방식"""
 
+    RSS_URL = "https://www.kdca.go.kr/bbs/kdca/41/rssList.do?row=50"
     BASE_URL = "https://www.kdca.go.kr"
-    LIST_URL = "https://www.kdca.go.kr/board/board.es?mid=a20501000000&bid=0015"
 
     def __init__(self):
         super().__init__("kdca")
 
     def fetch_list(self) -> list[dict]:
-        soup = self.get(self.LIST_URL)
-        if not soup:
-            return []
-
+        feed = feedparser.parse(self.RSS_URL)
         items = []
-        rows = soup.select(".board-list tbody tr")
 
-        for row in rows:
-            a_tag = row.select_one(".subject a")
-            if not a_tag:
-                continue
+        for entry in feed.entries:
+            title = entry.get("title", "").strip()
+            # 제목 끝 날짜 표기 제거 (예: "제목(4.9.목)}")
+            import re
+            title = re.sub(r'\(\d+\.\d+\.[\w]+\)\}?$', '', title).strip()
 
-            href = a_tag.get("href", "")
-            url = urljoin(self.BASE_URL, href)
-            title = a_tag.get_text(strip=True)
-
-            date_td = row.select_one("td:last-child")
-            published_at = self._parse_date(date_td.get_text(strip=True) if date_td else "")
-
-            items.append({"url": url, "title": title, "published_at": published_at})
+            items.append({
+                "url": entry.get("link", ""),
+                "title": title,
+                "published_at": None,
+            })
 
         return items
 
@@ -47,21 +41,22 @@ class KDCACrawler(BaseCrawler):
         if not soup:
             return None
 
-        body = soup.select_one(".board-view-content") or soup.select_one(".view-content")
+        body = (
+            soup.select_one("#contentsEditHtml")
+            or soup.select_one("article._contentBuilder")
+            or soup.select_one(".board-view-content")
+            or soup.select_one(".view-content")
+            or soup.select_one(".artcl-view")
+            or soup.select_one("#artclView")
+        )
         if not body:
             return None
 
-        for unwanted in body.select("script, style, .file-list"):
+        for unwanted in body.select("script, style, .file-list, .btn-wrap"):
             unwanted.decompose()
 
         lines = [line.strip() for line in body.get_text().splitlines() if line.strip()]
         return "\n".join(lines)
-
-    def _parse_date(self, date_str: str) -> Optional[datetime]:
-        try:
-            return datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        except Exception:
-            return None
 
 
 class NHISCrawler(BaseCrawler):
@@ -79,7 +74,7 @@ class NHISCrawler(BaseCrawler):
             return []
 
         items = []
-        rows = soup.select(".board_list tbody tr, .list-wrap li")
+        rows = soup.select("table tbody tr")
 
         for row in rows:
             a_tag = row.select_one("a")
@@ -87,10 +82,13 @@ class NHISCrawler(BaseCrawler):
                 continue
 
             href = a_tag.get("href", "")
-            url = urljoin(self.BASE_URL, href)
+            if not href or "download" in href:
+                continue
+
+            url = urljoin(self.BASE_URL, self.LIST_URL + href) if href.startswith("?") else urljoin(self.BASE_URL, href)
             title = a_tag.get_text(strip=True)
 
-            if not title:
+            if not title or len(title) < 5:
                 continue
 
             items.append({"url": url, "title": title, "published_at": None})
@@ -102,8 +100,7 @@ class NHISCrawler(BaseCrawler):
         if not soup:
             return None
 
-        selectors = [".view-content", ".board-view", ".content-area", "article"]
-        for selector in selectors:
+        for selector in [".view-content", ".board-view", ".artcl-view", "#artclView", ".content-area"]:
             body = soup.select_one(selector)
             if body and len(body.get_text(strip=True)) > 200:
                 for unwanted in body.select("script, style"):
@@ -129,17 +126,15 @@ class SNUHCrawler(BaseCrawler):
             return []
 
         items = []
-        links = soup.select(".list-wrap a, .board-list a")
-
-        for a_tag in links:
+        for a_tag in soup.find_all("a", href=True):
             href = a_tag.get("href", "")
-            if not href or "nView" not in href:
+            if "nView.do" not in href:
                 continue
 
-            url = urljoin(self.BASE_URL, href)
+            url = urljoin(self.BASE_URL + "/health/nMedInfo/", href)
             title = a_tag.get_text(strip=True)
 
-            if not title:
+            if not title or len(title) < 3:
                 continue
 
             items.append({"url": url, "title": title, "published_at": None})
@@ -151,12 +146,12 @@ class SNUHCrawler(BaseCrawler):
         if not soup:
             return None
 
-        body = soup.select_one(".health-content, .view-content, .content")
-        if not body:
-            return None
+        for selector in [".health-content", ".view-content", ".nMedInfo-view", ".content", "#content"]:
+            body = soup.select_one(selector)
+            if body and len(body.get_text(strip=True)) > 100:
+                for unwanted in body.select("script, style"):
+                    unwanted.decompose()
+                lines = [line.strip() for line in body.get_text().splitlines() if line.strip()]
+                return "\n".join(lines)
 
-        for unwanted in body.select("script, style"):
-            unwanted.decompose()
-
-        lines = [line.strip() for line in body.get_text().splitlines() if line.strip()]
-        return "\n".join(lines)
+        return None

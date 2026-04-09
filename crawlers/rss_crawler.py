@@ -42,6 +42,9 @@ class RSSCrawler(BaseCrawler):
 
         # 사이트별 본문 선택자 순서대로 시도
         selectors = [
+            "#story_text",           # ScienceDaily
+            "#articleBody",          # 메디컬투데이
+            "#viewConts",            # 메디컬투데이 대체
             "article",
             "[class*='article-body']",
             "[class*='article_body']",

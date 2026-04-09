@@ -120,7 +120,9 @@ def run() -> list[dict]:
     if not api_config or not api_config.get("enabled"):
         return []
 
-    api_key = os.environ.get("PUBMED_API_KEY") or None
+    raw_key = os.environ.get("PUBMED_API_KEY", "")
+    # placeholder 값이 그대로 남아있는 경우 무시
+    api_key = raw_key if (raw_key and not raw_key.startswith("your_")) else None
     max_results = api_config.get("max_results_per_query", 10)
     search_terms = api_config.get("search_terms", [])
 

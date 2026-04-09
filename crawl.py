@@ -7,7 +7,8 @@ import yaml
 from dotenv import load_dotenv
 
 from crawlers.rss_crawler import RSSCrawler
-from crawlers.html_crawler import KDCACrawler, NHISCrawler, SNUHCrawler
+from crawlers.html_crawler import NHISCrawler, SNUHCrawler
+from crawlers.html_crawler import KDCACrawler
 from crawlers.international_crawler import WHOCrawler
 from crawlers.pubmed_client import run as pubmed_run
 from crawlers.base_crawler import RawArticle
@@ -106,6 +107,7 @@ def main():
 
     # 1. RSS 크롤러 (국내 + 해외 통합)
     rss_crawler_map = {
+        "kdca": KDCACrawler,
         "who": WHOCrawler,
     }
 
@@ -129,7 +131,7 @@ def main():
         logger.info(f"[{name}] 저장: {saved}건 / 건너뜀: {skipped}건")
 
     # 2. HTML 크롤러 (국내 공공기관)
-    html_crawlers = [KDCACrawler(), NHISCrawler(), SNUHCrawler()]
+    html_crawlers = [NHISCrawler(), SNUHCrawler()]
 
     html_enabled = {s["name"]: s.get("enabled", True) for s in config["sources"]["html"]}
 
