@@ -7,19 +7,13 @@ crawl:
 sources:
   rss:
     - name: health_chosun
-      url: "https://health.chosun.com/rss/index.html"
+      url: "https://health.chosun.com/site/data/rss/rss.xml"
       enabled: true
     - name: mdtoday
-      url: "https://www.mdtoday.co.kr/rss/allArticle.xml"
+      url: "https://www.mdtoday.co.kr/news/rss.php"
       enabled: true
     - name: kormedi
       url: "https://kormedi.com/feed/"
-      enabled: true
-    - name: nih
-      url: "https://www.nih.gov/news-events/news-releases/feed"
-      enabled: true
-    - name: cdc
-      url: "https://tools.cdc.gov/api/v2/resources/media/316422.rss"
       enabled: true
     - name: who
       url: "https://www.who.int/rss-feeds/news-english.xml"
