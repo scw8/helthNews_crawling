@@ -1,0 +1,37 @@
+name: Daily Health News Crawler
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # KST 23:00 (UTC 14:00) 매일 자동 실행
+  workflow_dispatch:         # 수동 실행 (테스트용)
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 캐시
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 크롤러 실행
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PUBMED_API_KEY: ${{ secrets.PUBMED_API_KEY }}
+        run: python crawl.py
