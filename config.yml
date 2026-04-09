@@ -171,6 +171,53 @@ keywords:
       - "antioxidant"
       - "calcium"
 
+  면역력:
+    primary:
+      - "면역력"
+      - "면역"
+      - "면역계"
+      - "면역세포"
+      - "자연살해세포"
+      - "immunity"
+      - "immune system"
+      - "immune function"
+      - "NK cell"
+      - "white blood cell"
+    secondary:
+      - "항염증"
+      - "염증"
+      - "자가면역"
+      - "장 건강"
+      - "inflammation"
+      - "autoimmune"
+      - "gut health"
+      - "antioxidant"
+      - "lymphocyte"
+
+  저속노화:
+    primary:
+      - "저속노화"
+      - "노화"
+      - "항노화"
+      - "장수"
+      - "노화 방지"
+      - "aging"
+      - "anti-aging"
+      - "longevity"
+      - "healthy aging"
+      - "senescence"
+    secondary:
+      - "텔로미어"
+      - "활성산소"
+      - "세포 노화"
+      - "노화 억제"
+      - "telomere"
+      - "oxidative stress"
+      - "free radical"
+      - "sirtuins"
+      - "NAD+"
+      - "autophagy"
+
 quality:
   min_score: 0.3                # 이 점수 미만은 저장하지 않음
   priority_score: 0.7           # 스크립트 생성 시 우선 사용
