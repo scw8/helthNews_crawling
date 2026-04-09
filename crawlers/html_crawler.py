@@ -85,7 +85,7 @@ class NHISCrawler(BaseCrawler):
             if not href or "download" in href:
                 continue
 
-            url = urljoin(self.BASE_URL, self.LIST_URL + href) if href.startswith("?") else urljoin(self.BASE_URL, href)
+            url = (self.LIST_URL + href) if href.startswith("?") else urljoin(self.BASE_URL, href)
             title = a_tag.get_text(strip=True)
 
             if not title or len(title) < 5:

@@ -45,6 +45,7 @@ class RSSCrawler(BaseCrawler):
             "#story_text",           # ScienceDaily
             "#articleBody",          # 메디컬투데이
             "#viewConts",            # 메디컬투데이 대체
+            ".entry-content",        # 코메디닷컴
             "article",
             "[class*='article-body']",
             "[class*='article_body']",
