@@ -15,6 +15,15 @@ sources:
     - name: kormedi
       url: "https://kormedi.com/feed/"
       enabled: true
+    - name: nih
+      url: "https://www.nih.gov/news-events/news-releases/feed"
+      enabled: true
+    - name: cdc
+      url: "https://tools.cdc.gov/api/v2/resources/media/316422.rss"
+      enabled: true
+    - name: who
+      url: "https://www.who.int/rss-feeds/news-english.xml"
+      enabled: true
 
   html:
     - name: kdca
@@ -48,11 +57,19 @@ keywords:
       - "당화혈색소"
       - "저혈당"
       - "제2형 당뇨"
+      - "diabetes"
+      - "blood sugar"
+      - "insulin"
+      - "HbA1c"
+      - "hypoglycemia"
     secondary:
       - "탄수화물"
       - "혈당 스파이크"
       - "메트포르민"
       - "당뇨 합병증"
+      - "metformin"
+      - "glucose"
+      - "type 2 diabetes"
 
   고혈압:
     primary:
@@ -61,11 +78,19 @@ keywords:
       - "수축기"
       - "강압제"
       - "혈압약"
+      - "hypertension"
+      - "blood pressure"
+      - "systolic"
+      - "diastolic"
     secondary:
       - "나트륨"
       - "심혈관"
       - "뇌졸중"
       - "칼슘길항제"
+      - "sodium"
+      - "cardiovascular"
+      - "stroke"
+      - "antihypertensive"
 
   고지혈증:
     primary:
@@ -74,10 +99,16 @@ keywords:
       - "중성지방"
       - "LDL"
       - "스타틴"
+      - "cholesterol"
+      - "triglyceride"
+      - "statin"
+      - "hyperlipidemia"
     secondary:
       - "동맥경화"
       - "이상지질혈증"
       - "HDL"
+      - "atherosclerosis"
+      - "dyslipidemia"
 
   관절:
     primary:
@@ -86,10 +117,18 @@ keywords:
       - "골관절염"
       - "연골"
       - "골다공증"
+      - "osteoarthritis"
+      - "knee pain"
+      - "cartilage"
+      - "osteoporosis"
+      - "joint"
     secondary:
       - "디스크"
       - "척추협착"
       - "관절통"
+      - "arthritis"
+      - "bone density"
+      - "spine"
 
   치매:
     primary:
@@ -98,10 +137,19 @@ keywords:
       - "경도인지장애"
       - "인지저하"
       - "기억력"
+      - "dementia"
+      - "Alzheimer"
+      - "cognitive decline"
+      - "memory loss"
+      - "MCI"
     secondary:
       - "뇌 건강"
       - "인지 기능"
       - "베타아밀로이드"
+      - "brain health"
+      - "cognitive function"
+      - "amyloid"
+      - "neurodegeneration"
 
   영양제:
     primary:
@@ -110,10 +158,18 @@ keywords:
       - "오메가3"
       - "비타민D"
       - "마그네슘"
+      - "omega-3"
+      - "vitamin D"
+      - "supplement"
+      - "magnesium"
     secondary:
       - "약물 상호작용"
       - "영양보충"
       - "프로바이오틱스"
+      - "drug interaction"
+      - "probiotic"
+      - "antioxidant"
+      - "calcium"
 
 quality:
   min_score: 0.3                # 이 점수 미만은 저장하지 않음
