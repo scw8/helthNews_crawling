@@ -14,6 +14,9 @@ def classify(title: str, content: str) -> tuple[str, list[str], float]:
     """
     기사 제목 + 본문을 분석해서 주제 분류 및 관련도 점수 반환.
 
+    1단계: 제목에 primary 키워드가 있으면 메인 주제로 확정 (높은 신뢰도)
+    2단계: 제목에 없으면 본문에서 primary 2회 이상 등장해야 분류
+
     반환값:
         topic_category: 주제 (당뇨, 고혈압 등) - 해당 없으면 빈 문자열
         matched_keywords: 매칭된 키워드 목록
@@ -21,26 +24,37 @@ def classify(title: str, content: str) -> tuple[str, list[str], float]:
     """
     keywords = load_keywords()
 
-    # 제목에 3배 가중치 (제목 키워드가 더 중요)
-    combined = (title * 3) + " " + content
-
     best_topic = ""
     best_score = 0.0
     best_keywords = []
 
     for topic, data in keywords.items():
-        score = 0.0
         matched = []
+        title_primary_hits = 0
+        content_primary_hits = 0
+        secondary_hits = 0
 
         for kw in data["primary"]:
-            if kw in combined:
-                score += 2.0
+            if kw in title:
+                title_primary_hits += 1
+                matched.append(kw)
+            elif kw in content:
+                content_primary_hits += 1
                 matched.append(kw)
 
         for kw in data["secondary"]:
-            if kw in combined:
-                score += 1.0
+            if kw in title or kw in content:
+                secondary_hits += 1
                 matched.append(kw)
+
+        # 제목에 primary 키워드 있으면 메인 주제로 확정
+        if title_primary_hits >= 1:
+            score = title_primary_hits * 4.0 + secondary_hits * 1.0
+        # 제목에 없으면 본문에서 primary 2회 이상이어야 분류
+        elif content_primary_hits >= 2:
+            score = content_primary_hits * 1.5 + secondary_hits * 1.0
+        else:
+            continue  # 기준 미달 → 이 토픽 스킵
 
         if score > best_score:
             best_score = score

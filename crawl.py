@@ -13,6 +13,7 @@ from crawlers.international_crawler import WHOCrawler
 from crawlers.pubmed_client import run as pubmed_run
 from crawlers.base_crawler import RawArticle
 from filters.keyword_filter import classify, make_title_hash, quality_score
+from filters.relevance_checker import is_senior_relevant
 from storage.supabase_client import save_article, is_duplicate, Article
 
 load_dotenv()
@@ -65,9 +66,14 @@ def process_articles(raw_articles: list, min_score: float) -> tuple[int, int]:
             skipped += 1
             continue
 
-        # 키워드 분류
+        # 1단계: 키워드 분류 (제목 중심)
         topic, keywords, keyword_score = classify(title, content)
         if not topic:
+            skipped += 1
+            continue
+
+        # 2단계: HF Zero-shot으로 시니어 관련성 검증
+        if not is_senior_relevant(topic, title, content):
             skipped += 1
             continue
 
