@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -70,24 +70,69 @@ def is_duplicate(url: str, title_hash: str) -> bool:
     return False
 
 
-def get_articles_by_topic(topic: str, days: int = 60, limit: int = 15) -> list[dict]:
+def get_articles_by_topic(
+    topic: str,
+    days: int = 60,
+    limit: int = 15,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> list[dict]:
     """
     스크립트 생성 시 사용. 주제별 기사를 품질 점수 높은 순으로 조회.
+    start_date/end_date(ISO 문자열)가 있으면 days 대신 사용.
     """
     from datetime import timedelta
     client = get_client()
-    since = (datetime.utcnow() - timedelta(days=days)).isoformat()
 
-    result = (
+    query = (
         client.table("articles")
         .select("id, title, content, source, keywords, quality_score, published_at")
         .eq("topic_category", topic)
-        .gte("crawled_at", since)
         .order("quality_score", desc=True)
         .limit(limit)
-        .execute()
     )
-    return result.data
+
+    if start_date and end_date:
+        query = query.gte("published_at", start_date).lte("published_at", end_date)
+    else:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        query = query.gte("crawled_at", since)
+
+    return query.execute().data
+
+
+def get_articles(
+    topic: Optional[str] = None,
+    source: Optional[str] = None,
+    sources: Optional[list[str]] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[dict]:
+    """
+    기사/논문 리딩 페이지용. 필터 조건에 맞는 기사 목록 조회.
+    """
+    client = get_client()
+    query = (
+        client.table("articles")
+        .select("id, title, content, source, topic_category, published_at, quality_score, url")
+        .order("published_at", desc=True)
+    )
+
+    if topic:
+        query = query.eq("topic_category", topic)
+    if sources:
+        query = query.in_("source", sources)
+    elif source:
+        query = query.eq("source", source)
+    if start_date:
+        query = query.gte("published_at", start_date)
+    if end_date:
+        query = query.lte("published_at", end_date)
+
+    query = query.range(offset, offset + limit - 1)
+    return query.execute().data
 
 
 def save_script(topic: str, script_content: str, source_ids: list[int], file_path: str):

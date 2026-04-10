@@ -18,179 +18,243 @@
       padding: 40px 16px 80px;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    header h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #f8fafc;
-    }
-    header p {
-      margin-top: 8px;
-      font-size: 0.9rem;
-      color: #64748b;
-    }
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 { font-size: 1.75rem; font-weight: 700; color: #f8fafc; }
+    header p { margin-top: 8px; font-size: 0.875rem; color: #64748b; }
 
+    /* 탭 */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: #1e2333;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 820px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { background: #4f6ef7; color: #fff; font-weight: 600; }
+
+    /* 공통 카드 */
     .card {
       background: #1e2333;
       border: 1px solid #2d3748;
       border-radius: 16px;
-      padding: 32px;
+      padding: 28px;
       width: 100%;
-      max-width: 760px;
+      max-width: 820px;
     }
 
     .section-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #64748b;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     /* 주제 버튼 */
-    .topic-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
+    .topic-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
     .topic-btn {
-      padding: 8px 20px;
+      padding: 7px 18px;
       border-radius: 999px;
       border: 1.5px solid #2d3748;
       background: transparent;
       color: #94a3b8;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .topic-btn:hover {
-      border-color: #4f6ef7;
-      color: #c7d2fe;
-    }
-    .topic-btn.active {
-      background: #4f6ef7;
-      border-color: #4f6ef7;
-      color: #fff;
-      font-weight: 600;
-    }
+    .topic-btn:hover { border-color: #4f6ef7; color: #c7d2fe; }
+    .topic-btn.active { background: #4f6ef7; border-color: #4f6ef7; color: #fff; font-weight: 600; }
 
-    /* 옵션 */
-    .options-row {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-    .options-row label {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    select {
+    /* 옵션 행 */
+    .options-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 24px; }
+    .opt-group { display: flex; flex-direction: column; gap: 6px; }
+    .opt-group label { font-size: 0.8rem; color: #94a3b8; }
+    select, input[type="date"] {
       background: #0f1117;
       border: 1px solid #2d3748;
       border-radius: 8px;
       color: #e2e8f0;
-      padding: 6px 12px;
+      padding: 7px 12px;
       font-size: 0.85rem;
       cursor: pointer;
     }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+
+    /* 날짜 범위 토글 */
+    .date-range-row { display: flex; align-items: center; gap: 8px; }
+    .date-range-row span { color: #64748b; font-size: 0.85rem; }
+    #date-range-wrap { display: none; }
+    #date-range-wrap.visible { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+
+    /* 참고 기사 수 tooltip */
+    .tooltip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+    .info-icon {
+      width: 16px; height: 16px;
+      background: #2d3748;
+      border-radius: 50%;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .tooltip-box {
+      display: none;
+      position: absolute;
+      bottom: 130%;
+      left: 0;
+      background: #1e2333;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 10px 14px;
+      width: 260px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      z-index: 10;
+    }
+    .tooltip-wrap:hover .tooltip-box { display: block; }
 
     /* 생성 버튼 */
     #generate-btn {
-      width: 100%;
-      padding: 14px;
-      background: #4f6ef7;
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
+      width: 100%; padding: 13px;
+      background: #4f6ef7; border: none; border-radius: 10px;
+      color: #fff; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
     }
     #generate-btn:hover:not(:disabled) { background: #3b5bdb; }
     #generate-btn:disabled { background: #2d3748; color: #64748b; cursor: not-allowed; }
 
-    /* 상태 표시 */
-    #status {
-      margin-top: 20px;
-      font-size: 0.85rem;
-      color: #64748b;
-      min-height: 20px;
-      text-align: center;
-    }
+    #status { margin-top: 16px; font-size: 0.85rem; color: #64748b; min-height: 20px; text-align: center; }
     #status.error { color: #f87171; }
 
-    /* 결과 영역 */
-    #result-section {
-      display: none;
-      margin-top: 32px;
-    }
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .result-header span {
-      font-size: 0.85rem;
-      color: #64748b;
-    }
-    .action-btns {
-      display: flex;
-      gap: 8px;
-    }
+    /* 결과 */
+    #result-section { display: none; margin-top: 28px; }
+    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .result-header span { font-size: 0.82rem; color: #64748b; }
+    .action-btns { display: flex; gap: 8px; }
     .action-btn {
-      padding: 6px 14px;
-      border-radius: 8px;
-      border: 1px solid #2d3748;
-      background: transparent;
-      color: #94a3b8;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.15s;
+      padding: 6px 14px; border-radius: 8px;
+      border: 1px solid #2d3748; background: transparent;
+      color: #94a3b8; font-size: 0.8rem; cursor: pointer; transition: all 0.15s;
     }
     .action-btn:hover { border-color: #4f6ef7; color: #c7d2fe; }
     .action-btn.copied { border-color: #22c55e; color: #22c55e; }
-
     #output {
-      background: #0f1117;
-      border: 1px solid #2d3748;
-      border-radius: 10px;
-      padding: 24px;
-      font-size: 0.875rem;
-      line-height: 1.8;
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 600px;
-      overflow-y: auto;
-      color: #cbd5e1;
+      background: #0f1117; border: 1px solid #2d3748; border-radius: 10px;
+      padding: 22px; font-size: 0.875rem; line-height: 1.85;
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 620px; overflow-y: auto; color: #cbd5e1;
     }
-
-    /* 스크롤바 */
     #output::-webkit-scrollbar { width: 6px; }
-    #output::-webkit-scrollbar-track { background: transparent; }
     #output::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
 
-    /* 로딩 점 애니메이션 */
+    /* ── 리딩 탭 ── */
+    #reading-panel { display: none; }
+    #reading-panel.active { display: block; }
+    #generator-panel { display: block; }
+
+    .reading-toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      align-items: flex-end; margin-bottom: 20px;
+    }
+    .reading-toolbar select, .reading-toolbar input[type="date"] { min-width: 120px; }
+
+    .type-toggle { display: flex; gap: 6px; }
+    .type-btn {
+      padding: 7px 16px; border-radius: 999px;
+      border: 1.5px solid #2d3748; background: transparent;
+      color: #94a3b8; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
+    }
+    .type-btn.active { background: #4f6ef7; border-color: #4f6ef7; color: #fff; }
+
+    #load-btn {
+      padding: 8px 20px; border-radius: 8px;
+      background: #4f6ef7; border: none;
+      color: #fff; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    #load-btn:hover { background: #3b5bdb; }
+
+    /* 기사 목록 */
+    #article-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .article-card {
+      background: #0f1117; border: 1px solid #2d3748; border-radius: 10px;
+      padding: 16px 18px; cursor: pointer; transition: border-color 0.15s;
+    }
+    .article-card:hover { border-color: #4f6ef7; }
+    .article-meta {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      align-items: center; margin-bottom: 6px;
+    }
+    .badge {
+      padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+    }
+    .badge-paper { background: #312e81; color: #a5b4fc; }
+    .badge-article { background: #1e3a5f; color: #7dd3fc; }
+    .badge-topic { background: #1e3348; color: #94a3b8; }
+    .article-date { font-size: 0.75rem; color: #475569; margin-left: auto; }
+    .article-source { font-size: 0.75rem; color: #64748b; }
+    .article-title { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; }
+    .article-preview { font-size: 0.82rem; color: #64748b; line-height: 1.6; }
+
+    /* 기사 상세 모달 */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1e2333; border: 1px solid #2d3748; border-radius: 16px;
+      padding: 28px; width: 90%; max-width: 700px; max-height: 85vh;
+      display: flex; flex-direction: column; gap: 14px; overflow: hidden;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .modal-title { font-size: 1.05rem; font-weight: 700; color: #f1f5f9; line-height: 1.5; }
+    .modal-close {
+      background: none; border: none; color: #64748b;
+      font-size: 1.2rem; cursor: pointer; flex-shrink: 0; margin-top: 2px;
+    }
+    .modal-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .modal-body {
+      font-size: 0.875rem; line-height: 1.85; color: #cbd5e1;
+      overflow-y: auto; white-space: pre-wrap;
+    }
+    .modal-body::-webkit-scrollbar { width: 6px; }
+    .modal-body::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+    .modal-link {
+      font-size: 0.8rem; color: #7c87f5;
+      text-decoration: none; word-break: break-all;
+    }
+    .modal-link:hover { text-decoration: underline; }
+
+    #reading-status { font-size: 0.82rem; color: #64748b; margin-top: 8px; min-height: 20px; }
+
     .dot-loader::after {
       content: '';
       animation: dots 1.2s steps(3, end) infinite;
     }
     @keyframes dots {
-      0%   { content: ''; }
-      33%  { content: '.'; }
-      66%  { content: '..'; }
-      100% { content: '...'; }
+      0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; }
     }
   </style>
 </head>
@@ -198,10 +262,17 @@
 
 <header>
   <h1>건강 유튜브 스크립트 생성기</h1>
-  <p>공신력 있는 건강 정보를 바탕으로 55~70세 시니어 대상 15분 롱폼 스크립트를 생성합니다.</p>
+  <p>공신력 있는 건강 정보를 바탕으로 60~75세 시니어 대상 롱폼 스크립트를 생성합니다.</p>
 </header>
 
-<div class="card">
+<!-- 탭 -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="generator">스크립트 생성</button>
+  <button class="tab-btn" data-tab="reading">기사 · 논문 리딩</button>
+</div>
+
+<!-- ══ 스크립트 생성 패널 ══ -->
+<div class="card" id="generator-panel">
   <div class="section-label">주제 선택</div>
   <div class="topic-grid">
     {% for topic in topics %}
@@ -211,22 +282,51 @@
 
   <div class="section-label">옵션</div>
   <div class="options-row">
-    <label>
-      수집 기간
+
+    <!-- 수집 기간 -->
+    <div class="opt-group">
+      <label>수집 기간</label>
       <select id="days-select">
+        <option value="7">최근 7일</option>
+        <option value="14">최근 2주</option>
         <option value="30">최근 30일</option>
         <option value="60" selected>최근 60일</option>
         <option value="90">최근 90일</option>
+        <option value="custom">직접 설정</option>
       </select>
-    </label>
-    <label>
-      최대 참고 기사
+    </div>
+
+    <!-- 날짜 직접 설정 -->
+    <div id="date-range-wrap">
+      <div class="opt-group">
+        <label>시작일</label>
+        <input type="date" id="start-date" />
+      </div>
+      <div class="opt-group">
+        <label>종료일</label>
+        <input type="date" id="end-date" />
+      </div>
+    </div>
+
+    <!-- 참고 기사 수 -->
+    <div class="opt-group">
+      <label>
+        <span class="tooltip-wrap">
+          최대 참고 기사 수
+          <span class="info-icon">?</span>
+          <span class="tooltip-box">
+            기사 1건당 약 250 토큰이 소비됩니다.<br>
+            20건 초과 시 비용만 늘고 품질 향상은 미미합니다.<br>
+            15~20건이 품질·비용 최적 구간입니다.
+          </span>
+        </span>
+      </label>
       <select id="limit-select">
         <option value="10">10건</option>
         <option value="15" selected>15건</option>
-        <option value="20">20건</option>
+        <option value="20">20건 (최대)</option>
       </select>
-    </label>
+    </div>
   </div>
 
   <button id="generate-btn" disabled>주제를 선택하세요</button>
@@ -244,11 +344,91 @@
   </div>
 </div>
 
+<!-- ══ 기사·논문 리딩 패널 ══ -->
+<div class="card" id="reading-panel">
+  <div class="section-label">필터</div>
+  <div class="reading-toolbar">
+
+    <!-- 유형 -->
+    <div class="opt-group">
+      <label>유형</label>
+      <div class="type-toggle">
+        <button class="type-btn active" data-type="all">전체</button>
+        <button class="type-btn" data-type="article">기사</button>
+        <button class="type-btn" data-type="paper">논문</button>
+      </div>
+    </div>
+
+    <!-- 주제 -->
+    <div class="opt-group">
+      <label>주제</label>
+      <select id="r-topic">
+        <option value="">전체</option>
+        {% for topic in topics %}
+        <option value="{{ topic }}">{{ topic }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- 기관 -->
+    <div class="opt-group">
+      <label>기관</label>
+      <select id="r-source">
+        <option value="">전체</option>
+        {% for key, label in source_labels.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- 날짜 범위 -->
+    <div class="opt-group">
+      <label>시작일</label>
+      <input type="date" id="r-start-date" />
+    </div>
+    <div class="opt-group">
+      <label>종료일</label>
+      <input type="date" id="r-end-date" />
+    </div>
+
+    <button id="load-btn">조회</button>
+  </div>
+
+  <div id="reading-status"></div>
+  <div id="article-list"></div>
+</div>
+
+<!-- 기사 상세 모달 -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-meta" id="modal-meta"></div>
+    <a class="modal-link" id="modal-link" target="_blank" rel="noopener"></a>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script>
+  /* ── 탭 전환 ── */
+  let activeType = "all";
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      document.getElementById("generator-panel").style.display = tab === "generator" ? "block" : "none";
+      document.getElementById("reading-panel").style.display  = tab === "reading"   ? "block" : "none";
+    });
+  });
+
+  /* ── 스크립트 생성 탭 ── */
   let selectedTopic = null;
   let fullScript = "";
 
-  // 주제 버튼
   document.querySelectorAll(".topic-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("active"));
@@ -260,20 +440,37 @@
     });
   });
 
-  // 생성 버튼
+  // 수집 기간 셀렉트 → 날짜 피커 토글
+  document.getElementById("days-select").addEventListener("change", function () {
+    const wrap = document.getElementById("date-range-wrap");
+    if (this.value === "custom") {
+      wrap.classList.add("visible");
+    } else {
+      wrap.classList.remove("visible");
+    }
+  });
+
   document.getElementById("generate-btn").addEventListener("click", async () => {
     if (!selectedTopic) return;
 
-    const days = document.getElementById("days-select").value;
+    const daysSelect = document.getElementById("days-select");
     const limit = document.getElementById("limit-select").value;
-
     const genBtn = document.getElementById("generate-btn");
     const status = document.getElementById("status");
     const resultSection = document.getElementById("result-section");
     const output = document.getElementById("output");
     const resultMeta = document.getElementById("result-meta");
 
-    // 초기화
+    let urlParams = `topic=${encodeURIComponent(selectedTopic)}&limit=${limit}`;
+    if (daysSelect.value === "custom") {
+      const s = document.getElementById("start-date").value;
+      const e = document.getElementById("end-date").value;
+      if (!s || !e) { status.className = "error"; status.textContent = "시작일과 종료일을 선택해주세요."; return; }
+      urlParams += `&start_date=${s}&end_date=${e}`;
+    } else {
+      urlParams += `&days=${daysSelect.value}`;
+    }
+
     genBtn.disabled = true;
     genBtn.textContent = "생성 중...";
     status.className = "dot-loader";
@@ -282,74 +479,143 @@
     output.textContent = "";
     fullScript = "";
 
-    const url = `/generate?topic=${encodeURIComponent(selectedTopic)}&days=${days}&limit=${limit}`;
-    const eventSource = new EventSource(url);
-
-    eventSource.onmessage = (e) => {
+    const es = new EventSource(`/generate?${urlParams}`);
+    es.onmessage = (e) => {
       const data = JSON.parse(e.data);
-
       if (data.error) {
-        status.className = "error";
-        status.textContent = data.error;
-        genBtn.disabled = false;
-        genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
-        eventSource.close();
-        return;
+        status.className = "error"; status.textContent = data.error;
+        genBtn.disabled = false; genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+        es.close(); return;
       }
-
       if (data.meta) {
         status.className = "dot-loader";
         status.textContent = `참고 기사 ${data.meta.article_count}건 · Claude가 스크립트 작성 중`;
         resultMeta.textContent = `주제: ${data.meta.topic} · 참고 기사 ${data.meta.article_count}건`;
-        resultSection.style.display = "block";
-        return;
+        resultSection.style.display = "block"; return;
       }
-
       if (data.text) {
         fullScript += data.text;
         output.textContent = fullScript;
-        output.scrollTop = output.scrollHeight;
-        return;
+        output.scrollTop = output.scrollHeight; return;
       }
-
       if (data.done) {
         fullScript = data.full_text;
-        status.className = "";
-        status.textContent = "생성 완료!";
-        genBtn.disabled = false;
-        genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
-        eventSource.close();
+        status.className = ""; status.textContent = "생성 완료!";
+        genBtn.disabled = false; genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+        es.close();
       }
     };
-
-    eventSource.onerror = () => {
-      status.className = "error";
-      status.textContent = "연결 오류가 발생했습니다. 다시 시도해주세요.";
-      genBtn.disabled = false;
-      genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
-      eventSource.close();
+    es.onerror = () => {
+      status.className = "error"; status.textContent = "연결 오류가 발생했습니다. 다시 시도해주세요.";
+      genBtn.disabled = false; genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+      es.close();
     };
   });
 
-  // 복사 버튼
   document.getElementById("copy-btn").addEventListener("click", async () => {
     if (!fullScript) return;
     await navigator.clipboard.writeText(fullScript);
     const btn = document.getElementById("copy-btn");
-    btn.textContent = "복사됨!";
-    btn.classList.add("copied");
+    btn.textContent = "복사됨!"; btn.classList.add("copied");
     setTimeout(() => { btn.textContent = "복사"; btn.classList.remove("copied"); }, 2000);
   });
 
-  // 다운로드 버튼
   document.getElementById("download-btn").addEventListener("click", () => {
     if (!fullScript || !selectedTopic) return;
     const today = new Date().toISOString().slice(0, 10);
     const blob = new Blob([fullScript], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${today}_${selectedTopic}.txt`;
-    a.click();
+    a.href = URL.createObjectURL(blob); a.download = `${today}_${selectedTopic}.txt`; a.click();
+  });
+
+  /* ── 리딩 탭 ── */
+  document.querySelectorAll(".type-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeType = btn.dataset.type;
+    });
+  });
+
+  document.getElementById("load-btn").addEventListener("click", loadArticles);
+
+  async function loadArticles() {
+    const topic   = document.getElementById("r-topic").value;
+    const source  = document.getElementById("r-source").value;
+    const start   = document.getElementById("r-start-date").value;
+    const end     = document.getElementById("r-end-date").value;
+    const status  = document.getElementById("reading-status");
+    const list    = document.getElementById("article-list");
+
+    let params = `limit=50&type=${activeType}`;
+    if (topic)  params += `&topic=${encodeURIComponent(topic)}`;
+    if (source) params += `&source=${source}`;
+    if (start)  params += `&start_date=${start}`;
+    if (end)    params += `&end_date=${end}`;
+
+    status.className = "dot-loader"; status.textContent = "조회 중";
+    list.innerHTML = "";
+
+    const res = await fetch(`/articles?${params}`);
+    const json = await res.json();
+    const items = json.items;
+
+    status.className = "";
+    status.textContent = items.length > 0 ? `총 ${items.length}건` : "조회된 결과가 없습니다.";
+
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "article-card";
+
+      const dateStr = item.published_at
+        ? new Date(item.published_at).toLocaleDateString("ko-KR", { year:"numeric", month:"2-digit", day:"2-digit" })
+        : "날짜 없음";
+
+      const preview = (item.content || "").slice(0, 120).replace(/\n/g, " ");
+      const typeLabel = item.is_paper ? "논문" : "기사";
+      const typeBadge = item.is_paper ? "badge-paper" : "badge-article";
+
+      card.innerHTML = `
+        <div class="article-meta">
+          <span class="badge ${typeBadge}">${typeLabel}</span>
+          <span class="badge badge-topic">${item.topic_category || "-"}</span>
+          <span class="article-source">${item.source_label}</span>
+          <span class="article-date">${dateStr}</span>
+        </div>
+        <div class="article-title">${item.title}</div>
+        <div class="article-preview">${preview}${preview.length >= 120 ? "..." : ""}</div>
+      `;
+
+      card.addEventListener("click", () => openModal(item));
+      list.appendChild(card);
+    });
+  }
+
+  function openModal(item) {
+    const dateStr = item.published_at
+      ? new Date(item.published_at).toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric" })
+      : "날짜 없음";
+
+    document.getElementById("modal-title").textContent = item.title;
+    document.getElementById("modal-meta").innerHTML = `
+      <span class="badge ${item.is_paper ? 'badge-paper' : 'badge-article'}">${item.is_paper ? "논문" : "기사"}</span>
+      <span class="badge badge-topic">${item.topic_category || "-"}</span>
+      <span class="article-source">${item.source_label}</span>
+      <span class="article-date">${dateStr}</span>
+    `;
+    const link = document.getElementById("modal-link");
+    if (item.url) { link.href = item.url; link.textContent = item.url; }
+    else { link.textContent = ""; }
+    document.getElementById("modal-body").textContent = item.content || "본문 없음";
+    document.getElementById("modal-overlay").classList.add("open");
+  }
+
+  document.getElementById("modal-close").addEventListener("click", () => {
+    document.getElementById("modal-overlay").classList.remove("open");
+  });
+  document.getElementById("modal-overlay").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("modal-overlay"))
+      document.getElementById("modal-overlay").classList.remove("open");
   });
 </script>
 </body>
