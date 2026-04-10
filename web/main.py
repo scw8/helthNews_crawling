@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="건강 유튜브 스크립트 생성기")
 templates = Jinja2Templates(directory="web/templates")
 
-TOPICS = ["당뇨", "고혈압", "고지혈증", "관절", "치매", "영양제", "면역력", "저속노화"]
+TOPICS = ["당뇨", "고혈압", "고지혈증", "관절", "치매", "영양제", "면역력", "저속노화",
+          "치아", "불면증", "두통", "피부미용", "국가정책"]
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 8192
 

@@ -42,6 +42,10 @@ sources:
         - "osteoarthritis elderly treatment"
         - "vitamin D deficiency elderly Korean"
         - "cholesterol management elderly"
+        - "periodontal disease elderly"
+        - "insomnia elderly treatment"
+        - "headache elderly management"
+        - "skin aging elderly collagen"
       max_results_per_query: 10
       enabled: true
 
@@ -214,6 +218,112 @@ keywords:
       - "sirtuins"
       - "NAD+"
       - "autophagy"
+
+  치아:
+    primary:
+      - "잇몸병"
+      - "치주염"
+      - "임플란트"
+      - "스케일링"
+      - "틀니"
+      - "치아"
+      - "periodontal"
+      - "dental implant"
+      - "gum disease"
+      - "oral health"
+    secondary:
+      - "충치"
+      - "치석"
+      - "잇몸 출혈"
+      - "구강 건강"
+      - "tooth decay"
+      - "gingivitis"
+      - "denture"
+      - "dry mouth"
+
+  불면증:
+    primary:
+      - "불면증"
+      - "수면장애"
+      - "숙면"
+      - "멜라토닌"
+      - "수면의 질"
+      - "insomnia"
+      - "sleep disorder"
+      - "melatonin"
+      - "sleep quality"
+    secondary:
+      - "수면제"
+      - "기상 시간"
+      - "수면 위생"
+      - "렘수면"
+      - "睡眠"
+      - "sleeping pill"
+      - "circadian rhythm"
+      - "sleep apnea"
+      - "fatigue"
+
+  두통:
+    primary:
+      - "두통"
+      - "편두통"
+      - "긴장성 두통"
+      - "갱년기 두통"
+      - "headache"
+      - "migraine"
+      - "tension headache"
+    secondary:
+      - "진통제"
+      - "뇌졸중"
+      - "혈압성 두통"
+      - "경추성 두통"
+      - "analgesic"
+      - "cervicogenic headache"
+      - "chronic headache"
+      - "painkiller"
+
+  피부미용:
+    primary:
+      - "피부 탄력"
+      - "콜라겐"
+      - "주름"
+      - "피부 노화"
+      - "보습"
+      - "collagen"
+      - "skin elasticity"
+      - "wrinkle"
+      - "skin aging"
+      - "moisturizer"
+    secondary:
+      - "자외선"
+      - "피부 장벽"
+      - "레티놀"
+      - "히알루론산"
+      - "UV protection"
+      - "skin barrier"
+      - "retinol"
+      - "hyaluronic acid"
+      - "antioxidant skin"
+
+  국가정책:
+    primary:
+      - "장기요양보험"
+      - "노인복지"
+      - "의료비 지원"
+      - "건강검진"
+      - "노인 혜택"
+      - "기초연금"
+      - "노인장기요양"
+      - "복지 서비스"
+    secondary:
+      - "국민건강보험"
+      - "의료급여"
+      - "노인 돌봄"
+      - "재가 서비스"
+      - "요양원"
+      - "치매 지원"
+      - "실버 정책"
+      - "노인 일자리"
 
 quality:
   min_score: 0.3                # 이 점수 미만은 저장하지 않음
