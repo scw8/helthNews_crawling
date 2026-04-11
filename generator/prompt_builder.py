@@ -128,6 +128,37 @@ POLICY_LANGUAGE_GUIDE = """
 """
 
 
+SHORTS_SCRIPT_STRUCTURE = """
+전체 1분 (약 200~230자) 구성:
+
+첫 문장 (3초): 훅
+  - 시청자가 스크롤을 멈추게 만드는 한 문장.
+  - 질문형 또는 반전형으로 작성. 예:
+    "○○ 때문에 잠 못 드신 적 있으시죠?"
+    "○○ 하고 계신 분들, 이것만 바꾸면 달라집니다."
+  - 공포·위협 표현 금지.
+
+본론 (50초): 핵심 메시지 1가지
+  - 딱 하나의 핵심 정보만 전달. 여러 개 나열 금지.
+  - 구체적 숫자 또는 행동 하나. 예: "하루 10분, 이것만 하세요."
+  - 출처 기관명 반드시 명시. 예: "질병관리청에 따르면"
+  - 짧고 강하게. 한 문장에 하나의 정보.
+
+마지막 (7초): CTA
+  - "도움이 됐다면 저장해두세요."
+  - "더 자세한 내용은 채널에서 확인하세요."
+"""
+
+SHORTS_LANGUAGE_GUIDE = """
+- 전체 글자 수 200~230자 엄수 (초과 금지)
+- 구어체, 짧은 문장
+- 마크다운 기호(**, --, #) 절대 금지
+- 타임코드, 섹션 제목 삽입 금지
+- "어르신" 금지 → "여러분" 사용
+- 첫 문장이 전부. 강하고 명확하게.
+"""
+
+
 def _build_references(articles: list[dict]) -> str:
     references = ""
     for i, article in enumerate(articles, 1):
@@ -144,14 +175,17 @@ def _build_references(articles: list[dict]) -> str:
     return references
 
 
-def build(topic: str, articles: list[dict]) -> str:
+def build(topic: str, articles: list[dict], format: str = "longform") -> str:
     """
     수집된 기사들을 Claude 프롬프트로 조립.
+    format: "longform" | "shorts"
     국가정책 주제는 별도 프롬프트 구조 사용.
     """
     references = _build_references(articles)
 
-    if topic == POLICY_TOPIC:
+    if format == "shorts":
+        return _build_shorts_prompt(topic, articles, references)
+    elif topic == POLICY_TOPIC:
         return _build_policy_prompt(topic, articles, references)
     else:
         return _build_health_prompt(topic, articles, references)
@@ -195,6 +229,35 @@ def _build_health_prompt(topic: str, articles: list[dict], references: str) -> s
     "본 영상의 내용은 일반적인 건강 정보이며, 개인의 건강 상태에 따라 다를 수 있습니다. 구체적인 치료나 복약은 반드시 담당 의사와 상담하세요."
 
 이제 스크립트를 작성해주세요.
+"""
+
+
+def _build_shorts_prompt(topic: str, articles: list[dict], references: str) -> str:
+    return f"""당신은 60~75세 시니어를 대상으로 한 건강 유튜브 채널의 쇼츠 전문 작가입니다.
+
+오늘의 주제
+{topic}
+
+언어 및 톤 가이드
+{SHORTS_LANGUAGE_GUIDE}
+
+쇼츠 구성 (총 1분)
+{SHORTS_SCRIPT_STRUCTURE}
+
+참고 자료 ({len(articles)}건)
+아래 자료에서 가장 임팩트 있는 핵심 사실 하나를 골라 쇼츠에 활용하세요.
+{references}
+
+작성 지침
+1. 인트로 없이 바로 훅 문장으로 시작하세요. (낭만닥터 박사부 인사 없음)
+2. 핵심 메시지는 딱 1가지만. 여러 정보 나열 절대 금지.
+3. 출처는 기관명을 명시하세요. 예: "질병관리청에 따르면", "서울대학교병원 연구에 따르면"
+4. **, --, #, *, --- 등 마크다운 기호 절대 금지.
+5. 타임코드, 섹션 제목 삽입 금지. 순수 텍스트로만 작성.
+6. 전체 글자 수 200~230자를 엄수하세요.
+7. 마지막 줄: "도움이 됐다면 저장해두세요. 더 자세한 내용은 채널에서 확인하세요."
+
+이제 쇼츠 스크립트를 작성해주세요.
 """
 
 

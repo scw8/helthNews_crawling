@@ -280,6 +280,12 @@
     {% endfor %}
   </div>
 
+  <div class="section-label">형식</div>
+  <div class="type-toggle" style="margin-bottom: 20px;">
+    <button class="type-btn active" data-format="longform">롱폼 (14분)</button>
+    <button class="type-btn" data-format="shorts">쇼츠 (1분)</button>
+  </div>
+
   <div class="section-label">옵션</div>
   <div class="options-row">
 
@@ -428,6 +434,20 @@
   /* ── 스크립트 생성 탭 ── */
   let selectedTopic = null;
   let fullScript = "";
+  let selectedFormat = "longform";
+
+  // 형식 토글
+  document.querySelectorAll("[data-format]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-format]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedFormat = btn.dataset.format;
+      if (selectedTopic) {
+        const label = selectedFormat === "shorts" ? "쇼츠" : "롱폼";
+        document.getElementById("generate-btn").textContent = `'${selectedTopic}' ${label} 스크립트 생성`;
+      }
+    });
+  });
 
   document.querySelectorAll(".topic-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -436,7 +456,8 @@
       selectedTopic = btn.dataset.topic;
       const genBtn = document.getElementById("generate-btn");
       genBtn.disabled = false;
-      genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+      const label = selectedFormat === "shorts" ? "쇼츠" : "롱폼";
+      genBtn.textContent = `'${selectedTopic}' ${label} 스크립트 생성`;
     });
   });
 
@@ -461,7 +482,7 @@
     const output = document.getElementById("output");
     const resultMeta = document.getElementById("result-meta");
 
-    let urlParams = `topic=${encodeURIComponent(selectedTopic)}&limit=${limit}`;
+    let urlParams = `topic=${encodeURIComponent(selectedTopic)}&format=${selectedFormat}&limit=${limit}`;
     if (daysSelect.value === "custom") {
       const s = document.getElementById("start-date").value;
       const e = document.getElementById("end-date").value;
@@ -484,7 +505,9 @@
       const data = JSON.parse(e.data);
       if (data.error) {
         status.className = "error"; status.textContent = data.error;
-        genBtn.disabled = false; genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+        genBtn.disabled = false;
+        const lbl = selectedFormat === "shorts" ? "쇼츠" : "롱폼";
+        genBtn.textContent = `'${selectedTopic}' ${lbl} 스크립트 생성`;
         es.close(); return;
       }
       if (data.meta) {
@@ -501,13 +524,17 @@
       if (data.done) {
         fullScript = data.full_text;
         status.className = ""; status.textContent = "생성 완료!";
-        genBtn.disabled = false; genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+        genBtn.disabled = false;
+        const lbl = selectedFormat === "shorts" ? "쇼츠" : "롱폼";
+        genBtn.textContent = `'${selectedTopic}' ${lbl} 스크립트 생성`;
         es.close();
       }
     };
     es.onerror = () => {
       status.className = "error"; status.textContent = "연결 오류가 발생했습니다. 다시 시도해주세요.";
-      genBtn.disabled = false; genBtn.textContent = `'${selectedTopic}' 스크립트 생성`;
+      genBtn.disabled = false;
+      const lbl = selectedFormat === "shorts" ? "쇼츠" : "롱폼";
+      genBtn.textContent = `'${selectedTopic}' ${lbl} 스크립트 생성`;
       es.close();
     };
   });

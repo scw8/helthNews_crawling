@@ -129,6 +129,7 @@ async def index(request: Request):
 async def generate(
     request: Request,
     topic: str,
+    format: str = "longform",
     days: int = 60,
     limit: int = 15,
     start_date: Optional[str] = None,
@@ -161,7 +162,7 @@ async def generate(
             yield f"data: {json.dumps({'error': f'{topic} 관련 기사가 없습니다. 크롤러를 먼저 실행하세요.'})}\n\n"
         return StreamingResponse(no_articles_stream(), media_type="text/event-stream")
 
-    prompt = build(topic, articles)
+    prompt = build(topic, articles, format=format)
     article_count = len(articles)
 
     async def stream():
