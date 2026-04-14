@@ -210,6 +210,7 @@ def _build_health_prompt(topic: str, articles: list[dict], references: str) -> s
 ## 참고 자료 ({len(articles)}건)
 아래 공신력 있는 자료를 바탕으로 스크립트를 작성하세요.
 내용을 그대로 옮기지 말고, 시니어가 이해하기 쉽게 재구성하세요.
+자료 간 수치나 권고사항이 서로 다를 경우, 발행일이 더 최신인 자료를 우선하세요. 오래된 자료의 기준은 언급하지 마세요.
 {references}
 
 ## 작성 지침
@@ -249,6 +250,7 @@ def _build_shorts_prompt(topic: str, articles: list[dict], references: str) -> s
 
 참고 자료 ({len(articles)}건)
 아래 자료에서 가장 임팩트 있는 핵심 사실 하나를 골라 쇼츠에 활용하세요.
+여러 자료의 수치가 다를 경우 발행일이 가장 최신인 자료의 수치를 사용하세요.
 {references}
 
 작성 지침
@@ -280,6 +282,7 @@ def _build_policy_prompt(topic: str, articles: list[dict], references: str) -> s
 ## 참고 자료 ({len(articles)}건)
 아래 자료를 바탕으로 스크립트를 작성하세요.
 정책 내용은 정확하게 전달하되, 어렵지 않게 풀어서 설명하세요.
+자료 간 지원 금액·기준이 서로 다를 경우, 발행일이 더 최신인 자료를 우선하세요. 변경 전 기준은 언급하지 마세요.
 {references}
 
 ## 작성 지침

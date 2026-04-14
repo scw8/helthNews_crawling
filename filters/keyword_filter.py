@@ -78,40 +78,62 @@ def make_title_hash(title: str) -> str:
 def quality_score(source: str, content: str, published_at, keyword_score: float) -> float:
     """
     최종 품질 점수 계산 (0.0 ~ 1.0).
-    소스 신뢰도 + 콘텐츠 길이 + 최신성 + 키워드 관련도 합산.
+
+    가중치 구성:
+      출처 신뢰도  × 0.35
+      최신성       × 0.30  (지수 감쇠, 반감기 45일)
+      내용 밀도    최대 0.20  (수치·연구 언급·길이 적합성)
+      키워드 관련도 × 0.15
     """
+    import math
+    import re
+    from datetime import datetime, timezone
+
+    # ── 1. 출처 신뢰도 ──────────────────────────────────────
     source_weights = {
-        "kdca": 1.0,
-        "nhis": 0.95,
-        "hira": 0.95,
-        "pubmed": 0.95,
-        "snuh": 0.88,
+        "kdca":          1.00,  # 질병관리청
+        "mohw":          0.95,  # 보건복지부
+        "nhis":          0.95,  # 국민건강보험공단
+        "hira":          0.95,  # 건강보험심사평가원
+        "pubmed":        0.93,  # 국제 동료 심사 논문
+        "snuh":          0.88,  # 서울대학교병원
+        "who":           0.85,  # 세계보건기구
+        "sciencedaily":  0.75,  # 논문 요약 미디어
         "health_chosun": 0.70,
-        "mdtoday": 0.70,
-        "kormedi": 0.65,
+        "mdtoday":       0.70,
+        "kormedi":       0.65,
+        "bokjitimes":    0.55,  # 복지 정책 미디어
     }
-    score = source_weights.get(source, 0.5) * 0.4
+    source_score = source_weights.get(source, 0.50) * 0.35
 
-    # 콘텐츠 길이
-    content_len = len(content) if content else 0
-    if content_len > 1000:
-        score += 0.2
-    elif content_len > 300:
-        score += 0.1
-
-    # 최신성
+    # ── 2. 최신성 — 지수 감쇠 (반감기 45일) ────────────────
+    recency_score = 0.0
     if published_at:
-        from datetime import datetime, timedelta, timezone
         now = datetime.now(timezone.utc)
         if published_at.tzinfo is None:
             published_at = published_at.replace(tzinfo=timezone.utc)
-        age = now - published_at
-        if age.days < 7:
-            score += 0.2
-        elif age.days < 30:
-            score += 0.1
+        age_days = max((now - published_at).days, 0)
+        recency_score = 0.30 * math.exp(-age_days / 45)
 
-    # 키워드 관련도
-    score += keyword_score * 0.2
+    # ── 3. 내용 밀도 ─────────────────────────────────────────
+    text = content or ""
+    density_score = 0.0
 
-    return min(score, 1.0)
+    # 구체적 수치 포함 여부 (mg, %, mmHg, 만명, 회 등)
+    if len(re.findall(r'\d+\s*[%㎎mg㎍ug만명회기개월주년]', text)) >= 2:
+        density_score += 0.08
+
+    # 연구·근거 언급
+    evidence_keywords = ["연구", "임상", "권고", "가이드라인", "논문", "학회", "분석", "조사"]
+    if any(kw in text for kw in evidence_keywords):
+        density_score += 0.07
+
+    # 적정 길이 (너무 짧으면 정보 부족, 너무 길면 광고·나열성)
+    content_len = len(text)
+    if 300 < content_len < 5000:
+        density_score += 0.05
+
+    # ── 4. 키워드 관련도 ─────────────────────────────────────
+    keyword_contribution = keyword_score * 0.15
+
+    return min(source_score + recency_score + density_score + keyword_contribution, 1.0)
