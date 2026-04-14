@@ -1,30 +1,37 @@
 import logging
-import os
 import sys
 from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
 
+from crawlers.base_crawler import BaseCrawler
 from crawlers.rss_crawler import RSSCrawler
-from crawlers.html_crawler import NHISCrawler, SNUHCrawler, MOHWCrawler
-from crawlers.html_crawler import KDCACrawler
+from crawlers.html_crawler import KDCACrawler, NHISCrawler, SNUHCrawler, MOHWCrawler
 from crawlers.international_crawler import WHOCrawler
 from crawlers.pubmed_client import run as pubmed_run
-from crawlers.base_crawler import RawArticle
 from filters.keyword_filter import classify, make_title_hash, quality_score
 from filters.relevance_checker import is_senior_relevant
 from storage.supabase_client import save_article, is_duplicate, Article
 
 load_dotenv()
 
-# 로그 설정
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
+
+# 소스명 → 전용 크롤러 클래스 등록
+# 새 크롤러 추가 시 여기에 한 줄만 추가하면 됨
+CRAWLER_REGISTRY: dict[str, type[BaseCrawler]] = {
+    "kdca": KDCACrawler,
+    "who": WHOCrawler,
+    "nhis": NHISCrawler,
+    "snuh": SNUHCrawler,
+    "mohw": MOHWCrawler,
+}
 
 
 def load_config() -> dict:
@@ -34,15 +41,11 @@ def load_config() -> dict:
 
 
 def process_articles(raw_articles: list, min_score: float) -> tuple[int, int]:
-    """
-    수집된 기사 필터링 후 Supabase에 저장.
-    반환: (저장된 수, 건너뛴 수)
-    """
+    """수집된 기사 필터링 후 Supabase에 저장. 반환: (저장된 수, 건너뛴 수)"""
     saved = 0
     skipped = 0
 
     for raw in raw_articles:
-        # RawArticle 또는 dict 모두 처리
         if isinstance(raw, dict):
             url = raw.get("url", "")
             title = raw.get("title", "")
@@ -60,7 +63,6 @@ def process_articles(raw_articles: list, min_score: float) -> tuple[int, int]:
             skipped += 1
             continue
 
-        # 중복 확인
         title_hash = make_title_hash(title)
         if is_duplicate(url, title_hash):
             skipped += 1
@@ -77,13 +79,11 @@ def process_articles(raw_articles: list, min_score: float) -> tuple[int, int]:
             skipped += 1
             continue
 
-        # 품질 점수
         score = quality_score(source, content, published_at, keyword_score)
         if score < min_score:
             skipped += 1
             continue
 
-        # Supabase 저장
         article = Article(
             url=url,
             title=title,
@@ -103,55 +103,34 @@ def process_articles(raw_articles: list, min_score: float) -> tuple[int, int]:
     return saved, skipped
 
 
+def run_source(source: dict, min_score: float) -> tuple[int, int]:
+    """단일 소스를 크롤링하고 결과를 반환."""
+    name = source["name"]
+    crawler_cls = CRAWLER_REGISTRY.get(name)
+    crawler = crawler_cls() if crawler_cls else RSSCrawler(source_name=name, feed_url=source.get("url", ""))
+    raw_articles = crawler.run()
+    saved, skipped = process_articles(raw_articles, min_score)
+    logger.info(f"[{name}] 저장: {saved}건 / 건너뜀: {skipped}건")
+    return saved, skipped
+
+
 def main():
     config = load_config()
     min_score = config["quality"]["min_score"]
-    rss_sources = config["sources"]["rss"]
 
     total_saved = 0
     total_skipped = 0
 
-    # 1. RSS 크롤러 (국내 + 해외 통합)
-    rss_crawler_map = {
-        "kdca": KDCACrawler,
-        "who": WHOCrawler,
-    }
-
-    for source in rss_sources:
+    # RSS + HTML 소스 통합 처리
+    all_sources = config["sources"]["rss"] + config["sources"]["html"]
+    for source in all_sources:
         if not source.get("enabled"):
             continue
-
-        name = source["name"]
-        url = source.get("url", "")
-
-        # 해외 기관은 전용 크롤러 사용
-        if name in rss_crawler_map:
-            crawler = rss_crawler_map[name]()
-        else:
-            crawler = RSSCrawler(source_name=name, feed_url=url)
-
-        raw_articles = crawler.run()
-        saved, skipped = process_articles(raw_articles, min_score)
+        saved, skipped = run_source(source, min_score)
         total_saved += saved
         total_skipped += skipped
-        logger.info(f"[{name}] 저장: {saved}건 / 건너뜀: {skipped}건")
 
-    # 2. HTML 크롤러 (국내 공공기관)
-    html_crawlers = [NHISCrawler(), SNUHCrawler(), MOHWCrawler()]
-
-    html_enabled = {s["name"]: s.get("enabled", True) for s in config["sources"]["html"]}
-
-    for crawler in html_crawlers:
-        if not html_enabled.get(crawler.source_name, True):
-            continue
-
-        raw_articles = crawler.run()
-        saved, skipped = process_articles(raw_articles, min_score)
-        total_saved += saved
-        total_skipped += skipped
-        logger.info(f"[{crawler.source_name}] 저장: {saved}건 / 건너뜀: {skipped}건")
-
-    # 3. PubMed API
+    # PubMed API (별도 클라이언트)
     pubmed_enabled = any(
         s.get("enabled") for s in config["sources"]["api"] if s["name"] == "pubmed"
     )
