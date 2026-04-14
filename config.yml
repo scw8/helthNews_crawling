@@ -41,6 +41,14 @@ sources:
 
   api:
     - name: pubmed
+      # 1차: 이 저널에서 먼저 검색. 결과가 min_top_journal_results 미만이면 일반 검색으로 보완.
+      top_journals:
+        - "N Engl J Med"       # NEJM
+        - "Lancet"             # The Lancet
+        - "JAMA"               # Journal of the American Medical Association
+        - "BMJ"                # British Medical Journal
+        - "Ann Intern Med"     # Annals of Internal Medicine
+      min_top_journal_results: 3   # 상위 저널 결과가 이 수 이상이면 일반 검색 스킵
       search_terms:
         - "diabetes mellitus elderly Korean"
         - "hypertension elderly management Korean"
