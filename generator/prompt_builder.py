@@ -8,6 +8,8 @@ SOURCE_LABELS = {
     "health_chosun": "헬스조선",
     "mdtoday": "메디컬투데이",
     "kormedi": "코메디닷컴",
+    "mohw": "보건복지부",
+    "bokjitimes": "복지타임즈",
 }
 
 # 국가정책 주제는 별도 분기

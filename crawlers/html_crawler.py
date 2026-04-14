@@ -155,3 +155,71 @@ class SNUHCrawler(BaseCrawler):
                 return "\n".join(lines)
 
         return None
+
+
+class MOHWCrawler(BaseCrawler):
+    """보건복지부 보도자료 크롤러"""
+
+    BASE_URL = "https://www.mohw.go.kr"
+    LIST_URL = "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027"
+
+    def __init__(self):
+        super().__init__("mohw")
+
+    def fetch_list(self) -> list[dict]:
+        from datetime import datetime
+
+        soup = self.get(self.LIST_URL)
+        if not soup:
+            return []
+
+        items = []
+        for row in soup.select("table tbody tr"):
+            a_tag = row.select_one("td.title a, td a[href*='act=view']")
+            if not a_tag:
+                continue
+
+            href = a_tag.get("href", "")
+            if not href or "act=view" not in href:
+                continue
+
+            url = urljoin(self.BASE_URL, href) if href.startswith("/") else href
+            title = a_tag.get_text(strip=True)
+            if not title or len(title) < 5:
+                continue
+
+            published_at = None
+            date_td = row.select_one("td.date, td:last-child")
+            if date_td:
+                try:
+                    published_at = datetime.strptime(date_td.get_text(strip=True), "%Y-%m-%d")
+                except ValueError:
+                    pass
+
+            items.append({"url": url, "title": title, "published_at": published_at})
+
+        return items
+
+    def fetch_content(self, url: str) -> Optional[str]:
+        soup = self.get(url)
+        if not soup:
+            return None
+
+        for selector in [
+            ".board-view-content",
+            ".bdvContent",
+            ".view_content",
+            "#contentsArea .view-content",
+            ".brd-body",
+            "div.view-content",
+            "#artclView",
+            ".cont_inner",
+        ]:
+            body = soup.select_one(selector)
+            if body and len(body.get_text(strip=True)) > 100:
+                for unwanted in body.select("script, style, .file-list, .btn-wrap"):
+                    unwanted.decompose()
+                lines = [line.strip() for line in body.get_text().splitlines() if line.strip()]
+                return "\n".join(lines)
+
+        return None

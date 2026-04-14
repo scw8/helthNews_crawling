@@ -24,6 +24,9 @@ sources:
     - name: sciencedaily
       url: "https://www.sciencedaily.com/rss/health_medicine.xml"
       enabled: true
+    - name: bokjitimes
+      url: "https://www.bokjitimes.com/rss/allArticle.xml"
+      enabled: true
 
   html:
     - name: nhis
@@ -31,6 +34,9 @@ sources:
       enabled: true
     - name: snuh
       list_url: "https://www.snuh.org/health/nMedInfo/nList.do"
+      enabled: true
+    - name: mohw
+      list_url: "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027"
       enabled: true
 
   api:

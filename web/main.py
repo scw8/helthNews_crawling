@@ -56,6 +56,8 @@ SOURCE_LABELS = {
     "health_chosun": "헬스조선",
     "mdtoday": "메디컬투데이",
     "kormedi": "코메디닷컴",
+    "mohw": "보건복지부",
+    "bokjitimes": "복지타임즈",
 }
 
 PAPER_SOURCES = {"pubmed", "sciencedaily"}
