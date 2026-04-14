@@ -152,18 +152,21 @@ async def generate(
         return StreamingResponse(error_stream(), media_type="text/event-stream")
 
     from generator.prompt_builder import build
+    from generator.deduplicator import deduplicate
     from storage.supabase_client import get_articles_by_topic
 
-    articles = get_articles_by_topic(
-        topic, days=days, limit=limit,
+    # 중복 제거 여유분을 위해 limit×2 조회 후 유사 기사 제거 → 상위 limit개 사용
+    raw_articles = get_articles_by_topic(
+        topic, days=days, limit=limit * 2,
         start_date=start_date, end_date=end_date,
     )
 
-    if not articles:
+    if not raw_articles:
         async def no_articles_stream():
             yield f"data: {json.dumps({'error': f'{topic} 관련 기사가 없습니다. 크롤러를 먼저 실행하세요.'})}\n\n"
         return StreamingResponse(no_articles_stream(), media_type="text/event-stream")
 
+    articles = deduplicate(raw_articles)[:limit]
     prompt = build(topic, articles, format=format)
     article_count = len(articles)
 
