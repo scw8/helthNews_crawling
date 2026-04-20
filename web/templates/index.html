@@ -437,8 +437,8 @@
       const tab = btn.dataset.tab;
       document.getElementById("generator-panel").style.display = tab === "generator" ? "block" : "none";
       document.getElementById("reading-panel").style.display  = tab === "reading"   ? "block" : "none";
-      // 리딩 탭 활성화 시 sentinel 가시성 재확인 (display:none→block 후 Observer 재계산 보완)
-      if (tab === "reading") requestAnimationFrame(() => checkSentinel && checkSentinel());
+      // 리딩 탭 활성화 시 sentinel 재등록 (display:none→block 후 Observer 재계산 보완)
+      if (tab === "reading") requestAnimationFrame(() => reobserveSentinel && reobserveSentinel());
     });
   });
 
@@ -634,10 +634,9 @@
 
       renderArticles(items);
 
-      // 렌더 후 sentinel이 여전히 뷰포트 안에 있으면 Observer가 재발화하지 않으므로 직접 체크
-      // (20건이 뷰포트를 채우지 못한 경우 등)
+      // 렌더 후 sentinel이 이미 뷰포트 안이면 Observer가 재발화하지 않으므로 강제 재등록
       if (hasMore) {
-        requestAnimationFrame(checkSentinel);
+        requestAnimationFrame(reobserveSentinel);
       }
     } catch (e) {
       status.className = "error";
@@ -645,15 +644,6 @@
     } finally {
       isLoadingMore = false;
       loader.classList.remove("visible");
-    }
-  }
-
-  // sentinel이 뷰포트+여유거리 안에 있으면 즉시 다음 페이지 로드
-  function checkSentinel() {
-    if (!hasMore || isLoadingMore) return;
-    const rect = sentinel.getBoundingClientRect();
-    if (rect.top <= window.innerHeight + 400) {
-      loadNextPage();
     }
   }
 
@@ -702,12 +692,20 @@
     list.appendChild(fragment);
   }
 
-  // IntersectionObserver: rootMargin을 하단만 적용해 스크롤 400px 전에 미리 로드
+  // IntersectionObserver: rootMargin 하단 400px — 스크롤 전 미리 로드
   const observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
       loadNextPage();
     }
   }, { rootMargin: "0px 0px 400px 0px" });
+
+  // sentinel을 unobserve → re-observe 하면 교차 상태를 강제 재평가
+  // display:none 패널에서 초기화했거나 렌더 후 sentinel이 이미 뷰포트 안인 경우 모두 커버
+  function reobserveSentinel() {
+    observer.unobserve(sentinel);
+    observer.observe(sentinel);
+  }
+
   observer.observe(sentinel);
 
 

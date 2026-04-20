@@ -119,11 +119,13 @@ async def logout():
 async def index(request: Request):
     if not _is_authenticated(request):
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("index.html", {
+    response = templates.TemplateResponse("index.html", {
         "request": request,
         "topics": TOPICS,
         "source_labels": SOURCE_LABELS,
     })
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/generate")
