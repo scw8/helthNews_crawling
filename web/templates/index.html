@@ -249,6 +249,13 @@
 
     #reading-status { font-size: 0.82rem; color: #64748b; margin-top: 8px; min-height: 20px; }
 
+    #scroll-sentinel { height: 1px; }
+    .scroll-loader {
+      display: none; text-align: center;
+      padding: 20px 0; color: #64748b; font-size: 0.82rem;
+    }
+    .scroll-loader.visible { display: block; }
+
     .dot-loader::after {
       content: '';
       animation: dots 1.2s steps(3, end) infinite;
@@ -402,6 +409,8 @@
 
   <div id="reading-status"></div>
   <div id="article-list"></div>
+  <div class="scroll-loader" id="scroll-loader">불러오는 중<span class="dot-loader"></span></div>
+  <div id="scroll-sentinel"></div>
 </div>
 
 <!-- 기사 상세 모달 -->
@@ -556,6 +565,13 @@
   });
 
   /* ── 리딩 탭 ── */
+  const PAGE_SIZE = 20;
+  let readingOffset  = 0;
+  let readingTotal   = 0;
+  let isLoadingMore  = false;
+  let hasMore        = false;
+  let baseParams     = "";
+
   document.querySelectorAll(".type-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
@@ -564,32 +580,70 @@
     });
   });
 
-  document.getElementById("load-btn").addEventListener("click", loadArticles);
+  document.getElementById("load-btn").addEventListener("click", () => {
+    // 필터 변경 시 처음부터 다시 조회
+    const topic  = document.getElementById("r-topic").value;
+    const source = document.getElementById("r-source").value;
+    const start  = document.getElementById("r-start-date").value;
+    const end    = document.getElementById("r-end-date").value;
 
-  async function loadArticles() {
-    const topic   = document.getElementById("r-topic").value;
-    const source  = document.getElementById("r-source").value;
-    const start   = document.getElementById("r-start-date").value;
-    const end     = document.getElementById("r-end-date").value;
-    const status  = document.getElementById("reading-status");
-    const list    = document.getElementById("article-list");
+    baseParams = `type=${activeType}`;
+    if (topic)  baseParams += `&topic=${encodeURIComponent(topic)}`;
+    if (source) baseParams += `&source=${source}`;
+    if (start)  baseParams += `&start_date=${start}`;
+    if (end)    baseParams += `&end_date=${end}`;
 
-    let params = `limit=50&type=${activeType}`;
-    if (topic)  params += `&topic=${encodeURIComponent(topic)}`;
-    if (source) params += `&source=${source}`;
-    if (start)  params += `&start_date=${start}`;
-    if (end)    params += `&end_date=${end}`;
+    readingOffset = 0;
+    readingTotal  = 0;
+    hasMore       = false;
+    document.getElementById("article-list").innerHTML = "";
+    document.getElementById("reading-status").textContent = "";
 
-    status.className = "dot-loader"; status.textContent = "조회 중";
-    list.innerHTML = "";
+    loadNextPage(true);
+  });
 
-    const res = await fetch(`/articles?${params}`);
-    const json = await res.json();
-    const items = json.items;
+  async function loadNextPage(isFirstPage = false) {
+    if (isLoadingMore) return;
+    isLoadingMore = true;
 
-    status.className = "";
-    status.textContent = items.length > 0 ? `총 ${items.length}건` : "조회된 결과가 없습니다.";
+    const status = document.getElementById("reading-status");
+    const loader = document.getElementById("scroll-loader");
+    loader.classList.add("visible");
 
+    if (isFirstPage) {
+      status.className = "dot-loader";
+      status.textContent = "조회 중";
+    }
+
+    try {
+      const params = `${baseParams}&limit=${PAGE_SIZE}&offset=${readingOffset}`;
+      const res  = await fetch(`/articles?${params}`);
+      const json = await res.json();
+      const items = json.items;
+
+      readingTotal += items.length;
+      readingOffset += items.length;
+      hasMore = items.length === PAGE_SIZE;
+
+      status.className = "";
+      if (isFirstPage) {
+        status.textContent = items.length > 0 ? `${readingTotal}건 로드됨` : "조회된 결과가 없습니다.";
+      } else {
+        status.textContent = `${readingTotal}건 로드됨${hasMore ? "" : " · 전체 로드 완료"}`;
+      }
+
+      renderArticles(items);
+    } catch (e) {
+      status.className = "error";
+      status.textContent = "조회 중 오류가 발생했습니다.";
+    } finally {
+      isLoadingMore = false;
+      loader.classList.remove("visible");
+    }
+  }
+
+  function renderArticles(items) {
+    const list = document.getElementById("article-list");
     items.forEach(item => {
       const card = document.createElement("div");
       card.className = "article-card";
@@ -598,9 +652,9 @@
         ? new Date(item.published_at).toLocaleDateString("ko-KR", { year:"numeric", month:"2-digit", day:"2-digit" })
         : "날짜 없음";
 
-      const preview = (item.content || "").slice(0, 120).replace(/\n/g, " ");
-      const typeLabel = item.is_paper ? "논문" : "기사";
+      const preview  = (item.content || "").slice(0, 120).replace(/\n/g, " ");
       const typeBadge = item.is_paper ? "badge-paper" : "badge-article";
+      const typeLabel = item.is_paper ? "논문" : "기사";
 
       card.innerHTML = `
         <div class="article-meta">
@@ -612,11 +666,19 @@
         <div class="article-title">${item.title}</div>
         <div class="article-preview">${preview}${preview.length >= 120 ? "..." : ""}</div>
       `;
-
       card.addEventListener("click", () => openModal(item));
       list.appendChild(card);
     });
   }
+
+  // IntersectionObserver: sentinel이 보이면 다음 페이지 로드
+  const sentinel = document.getElementById("scroll-sentinel");
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+      loadNextPage();
+    }
+  }, { rootMargin: "200px" });
+  observer.observe(sentinel);
 
   function openModal(item) {
     const dateStr = item.published_at
