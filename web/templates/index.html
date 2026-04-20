@@ -437,6 +437,8 @@
       const tab = btn.dataset.tab;
       document.getElementById("generator-panel").style.display = tab === "generator" ? "block" : "none";
       document.getElementById("reading-panel").style.display  = tab === "reading"   ? "block" : "none";
+      // 리딩 탭 활성화 시 sentinel 가시성 재확인 (display:none→block 후 Observer 재계산 보완)
+      if (tab === "reading") requestAnimationFrame(() => checkSentinel && checkSentinel());
     });
   });
 
@@ -566,11 +568,14 @@
 
   /* ── 리딩 탭 ── */
   const PAGE_SIZE = 20;
-  let readingOffset  = 0;
-  let readingTotal   = 0;
-  let isLoadingMore  = false;
-  let hasMore        = false;
-  let baseParams     = "";
+  let readingOffset = 0;
+  let readingTotal  = 0;
+  let isLoadingMore = false;
+  let hasMore       = false;
+  let baseParams    = "";
+
+  const sentinel = document.getElementById("scroll-sentinel");
+  const loader   = document.getElementById("scroll-loader");
 
   document.querySelectorAll(".type-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -581,7 +586,6 @@
   });
 
   document.getElementById("load-btn").addEventListener("click", () => {
-    // 필터 변경 시 처음부터 다시 조회
     const topic  = document.getElementById("r-topic").value;
     const source = document.getElementById("r-source").value;
     const start  = document.getElementById("r-start-date").value;
@@ -605,11 +609,9 @@
   async function loadNextPage(isFirstPage = false) {
     if (isLoadingMore) return;
     isLoadingMore = true;
-
-    const status = document.getElementById("reading-status");
-    const loader = document.getElementById("scroll-loader");
     loader.classList.add("visible");
 
+    const status = document.getElementById("reading-status");
     if (isFirstPage) {
       status.className = "dot-loader";
       status.textContent = "조회 중";
@@ -621,18 +623,22 @@
       const json = await res.json();
       const items = json.items;
 
-      readingTotal += items.length;
+      readingTotal  += items.length;
       readingOffset += items.length;
       hasMore = items.length === PAGE_SIZE;
 
       status.className = "";
-      if (isFirstPage) {
-        status.textContent = items.length > 0 ? `${readingTotal}건 로드됨` : "조회된 결과가 없습니다.";
-      } else {
-        status.textContent = `${readingTotal}건 로드됨${hasMore ? "" : " · 전체 로드 완료"}`;
-      }
+      status.textContent = readingTotal > 0
+        ? `${readingTotal}건 로드됨${hasMore ? "" : " · 전체 로드 완료"}`
+        : "조회된 결과가 없습니다.";
 
       renderArticles(items);
+
+      // 렌더 후 sentinel이 여전히 뷰포트 안에 있으면 Observer가 재발화하지 않으므로 직접 체크
+      // (20건이 뷰포트를 채우지 못한 경우 등)
+      if (hasMore) {
+        requestAnimationFrame(checkSentinel);
+      }
     } catch (e) {
       status.className = "error";
       status.textContent = "조회 중 오류가 발생했습니다.";
@@ -642,43 +648,68 @@
     }
   }
 
+  // sentinel이 뷰포트+여유거리 안에 있으면 즉시 다음 페이지 로드
+  function checkSentinel() {
+    if (!hasMore || isLoadingMore) return;
+    const rect = sentinel.getBoundingClientRect();
+    if (rect.top <= window.innerHeight + 400) {
+      loadNextPage();
+    }
+  }
+
+  // DocumentFragment로 배치 DOM 삽입 → 리플로우 최소화
   function renderArticles(items) {
-    const list = document.getElementById("article-list");
+    const list     = document.getElementById("article-list");
+    const fragment = document.createDocumentFragment();
+
     items.forEach(item => {
       const card = document.createElement("div");
       card.className = "article-card";
 
-      const dateStr = item.published_at
+      const dateStr  = item.published_at
         ? new Date(item.published_at).toLocaleDateString("ko-KR", { year:"numeric", month:"2-digit", day:"2-digit" })
         : "날짜 없음";
-
-      const preview  = (item.content || "").slice(0, 120).replace(/\n/g, " ");
       const typeBadge = item.is_paper ? "badge-paper" : "badge-article";
       const typeLabel = item.is_paper ? "논문" : "기사";
 
-      card.innerHTML = `
-        <div class="article-meta">
-          <span class="badge ${typeBadge}">${typeLabel}</span>
-          <span class="badge badge-topic">${item.topic_category || "-"}</span>
-          <span class="article-source">${item.source_label}</span>
-          <span class="article-date">${dateStr}</span>
-        </div>
-        <div class="article-title">${item.title}</div>
-        <div class="article-preview">${preview}${preview.length >= 120 ? "..." : ""}</div>
-      `;
+      // 메타 행
+      const meta = document.createElement("div");
+      meta.className = "article-meta";
+      meta.innerHTML =
+        `<span class="badge ${typeBadge}">${typeLabel}</span>` +
+        `<span class="badge badge-topic">${item.topic_category || "-"}</span>` +
+        `<span class="article-source">${item.source_label}</span>` +
+        `<span class="article-date">${dateStr}</span>`;
+
+      // 제목 (XSS 방지: textContent)
+      const title = document.createElement("div");
+      title.className = "article-title";
+      title.textContent = item.title;
+
+      // 미리보기 (XSS 방지: textContent)
+      const preview = document.createElement("div");
+      preview.className = "article-preview";
+      const raw = (item.content || "").replace(/\n/g, " ");
+      preview.textContent = raw.length > 120 ? raw.slice(0, 120) + "…" : raw;
+
+      card.appendChild(meta);
+      card.appendChild(title);
+      card.appendChild(preview);
       card.addEventListener("click", () => openModal(item));
-      list.appendChild(card);
+      fragment.appendChild(card);
     });
+
+    list.appendChild(fragment);
   }
 
-  // IntersectionObserver: sentinel이 보이면 다음 페이지 로드
-  const sentinel = document.getElementById("scroll-sentinel");
+  // IntersectionObserver: rootMargin을 하단만 적용해 스크롤 400px 전에 미리 로드
   const observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
       loadNextPage();
     }
-  }, { rootMargin: "200px" });
+  }, { rootMargin: "0px 0px 400px 0px" });
   observer.observe(sentinel);
+
 
   function openModal(item) {
     const dateStr = item.published_at
