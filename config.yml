@@ -60,6 +60,8 @@ sources:
         - "insomnia elderly treatment"
         - "headache elderly management"
         - "skin aging elderly collagen"
+        - "menopause symptoms management Korean women"
+        - "andropause testosterone elderly men"
       max_results_per_query: 10
       enabled: true
 
@@ -317,6 +319,33 @@ keywords:
       - "retinol"
       - "hyaluronic acid"
       - "antioxidant skin"
+
+  갱년기:
+    primary:
+      - "갱년기"
+      - "폐경"
+      - "에스트로겐"
+      - "안면홍조"
+      - "호르몬 치료"
+      - "여성호르몬"
+      - "남성 갱년기"
+      - "테스토스테론"
+      - "menopause"
+      - "estrogen"
+      - "hot flash"
+      - "testosterone"
+      - "andropause"
+    secondary:
+      - "골밀도"
+      - "골다공증"
+      - "수면 장애"
+      - "우울감"
+      - "질 건조"
+      - "심혈관 위험"
+      - "HRT"
+      - "hormone replacement"
+      - "perimenopause"
+      - "progesterone"
 
   국가정책:
     primary:
