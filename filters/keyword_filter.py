@@ -107,6 +107,16 @@ def quality_score(source: str, content: str, published_at, keyword_score: float)
     source_score = source_weights.get(source, 0.50) * 0.35
 
     # ── 2. 최신성 — 지수 감쇠 (반감기 45일) ────────────────
+    # published_at이 None인 경우 소스 특성에 따라 폴백 점수 부여
+    #   뉴스/보도자료 소스: 크롤링 = 현재 존재 증명 → 오늘 기준 75% 점수
+    #   정적 콘텐츠 소스(SNUH 건강백과 등): 발행일 개념 없음 → 중립 고정값
+    _NEWS_SOURCES = {
+        "kdca", "mohw", "nhis", "hira",
+        "health_chosun", "mdtoday", "kormedi", "bokjitimes",
+        "who", "sciencedaily",
+    }
+    _STATIC_SOURCES = {"snuh"}
+
     recency_score = 0.0
     if published_at:
         now = datetime.now(timezone.utc)
@@ -114,6 +124,12 @@ def quality_score(source: str, content: str, published_at, keyword_score: float)
             published_at = published_at.replace(tzinfo=timezone.utc)
         age_days = max((now - published_at).days, 0)
         recency_score = 0.30 * math.exp(-age_days / 45)
+    elif source in _NEWS_SOURCES:
+        recency_score = 0.30 * 0.75   # ≈ 0.225 (오늘 기준, 날짜 불확실 25% 패널티)
+    elif source in _STATIC_SOURCES:
+        recency_score = 0.08           # 중립값 (~60일 등가): 오래됐을 수 있지만 가치 있음
+    else:
+        recency_score = 0.10           # 미분류 소스 기본값
 
     # ── 3. 내용 밀도 ─────────────────────────────────────────
     text = content or ""

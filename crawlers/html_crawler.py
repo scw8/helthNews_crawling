@@ -1,10 +1,48 @@
 import logging
+import re
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Optional
 from urllib.parse import urljoin
 
 import feedparser
 
 from crawlers.base_crawler import BaseCrawler
+
+# 한국 공공기관에서 자주 쓰는 날짜 형식: YYYY.MM.DD / YYYY-MM-DD / YYYY/MM/DD
+_DATE_RE = re.compile(r'(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})')
+
+
+def _parse_rss_date(entry) -> Optional[datetime]:
+    """feedparser entry에서 발행일 파싱 (RFC 2822 형식)."""
+    for field in ("published", "updated"):
+        value = entry.get(field)
+        if value:
+            try:
+                return parsedate_to_datetime(value).astimezone(timezone.utc)
+            except Exception:
+                continue
+    return None
+
+
+def _parse_date_from_text(text: str) -> Optional[datetime]:
+    """문자열에서 날짜 패턴(YYYY.MM.DD 등) 추출."""
+    m = _DATE_RE.search(text)
+    if not m:
+        return None
+    try:
+        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _extract_date_from_row(row) -> Optional[datetime]:
+    """테이블 행의 모든 td를 순회해 날짜 패턴이 있는 셀 반환."""
+    for td in row.find_all("td"):
+        dt = _parse_date_from_text(td.get_text(strip=True))
+        if dt:
+            return dt
+    return None
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +62,12 @@ class KDCACrawler(BaseCrawler):
 
         for entry in feed.entries:
             title = entry.get("title", "").strip()
-            # 제목 끝 날짜 표기 제거 (예: "제목(4.9.목)}")
-            import re
             title = re.sub(r'\(\d+\.\d+\.[\w]+\)\}?$', '', title).strip()
 
             items.append({
                 "url": entry.get("link", ""),
                 "title": title,
-                "published_at": None,
+                "published_at": _parse_rss_date(entry),
             })
 
         return items
@@ -91,7 +127,11 @@ class NHISCrawler(BaseCrawler):
             if not title or len(title) < 5:
                 continue
 
-            items.append({"url": url, "title": title, "published_at": None})
+            items.append({
+                "url": url,
+                "title": title,
+                "published_at": _extract_date_from_row(row),
+            })
 
         return items
 
@@ -141,6 +181,25 @@ class SNUHCrawler(BaseCrawler):
 
         return items
 
+    def _fetch_date(self, url: str) -> Optional[datetime]:
+        """개별 기사 페이지에서 날짜 추출 시도."""
+        soup = self.get(url)
+        if not soup:
+            return None
+        # <meta> 태그 우선 확인
+        for attr in ("article:published_time", "datePublished", "date"):
+            tag = soup.find("meta", attrs={"property": attr}) or soup.find("meta", attrs={"name": attr})
+            if tag and tag.get("content"):
+                dt = _parse_date_from_text(tag["content"])
+                if dt:
+                    return dt
+        # 날짜 패턴을 가진 텍스트 노드 탐색 (등록일, 수정일 등)
+        for el in soup.select(".date, .reg-date, .write-date, [class*='date']"):
+            dt = _parse_date_from_text(el.get_text())
+            if dt:
+                return dt
+        return None
+
     def fetch_content(self, url: str) -> Optional[str]:
         soup = self.get(url)
         if not soup:
@@ -167,8 +226,6 @@ class MOHWCrawler(BaseCrawler):
         super().__init__("mohw")
 
     def fetch_list(self) -> list[dict]:
-        from datetime import datetime
-
         soup = self.get(self.LIST_URL)
         if not soup:
             return []
@@ -188,15 +245,11 @@ class MOHWCrawler(BaseCrawler):
             if not title or len(title) < 5:
                 continue
 
-            published_at = None
-            date_td = row.select_one("td.date, td:last-child")
-            if date_td:
-                try:
-                    published_at = datetime.strptime(date_td.get_text(strip=True), "%Y-%m-%d")
-                except ValueError:
-                    pass
-
-            items.append({"url": url, "title": title, "published_at": published_at})
+            items.append({
+                "url": url,
+                "title": title,
+                "published_at": _extract_date_from_row(row),
+            })
 
         return items
 
