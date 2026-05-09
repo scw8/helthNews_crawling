@@ -1,8 +1,11 @@
 import hashlib
-import yaml
+from functools import lru_cache
 from pathlib import Path
 
+import yaml
 
+
+@lru_cache(maxsize=1)
 def load_keywords() -> dict:
     config_path = Path(__file__).parent.parent / "config.yml"
     with open(config_path, "r", encoding="utf-8") as f:

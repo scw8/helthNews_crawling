@@ -13,6 +13,10 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+from generator.prompt_builder import build, SOURCE_LABELS
+from generator.deduplicator import deduplicate
+from storage.supabase_client import get_articles_by_topic, get_articles
+
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -45,20 +49,6 @@ TOPICS = [
     "당뇨", "고혈압", "고지혈증", "관절", "치매", "영양제", "면역력", "저속노화",
     "치아", "불면증", "두통", "피부미용", "국가정책", "갱년기",
 ]
-
-SOURCE_LABELS = {
-    "kdca": "질병관리청",
-    "nhis": "국민건강보험공단",
-    "snuh": "서울대학교병원",
-    "pubmed": "PubMed (국제 논문)",
-    "who": "WHO",
-    "sciencedaily": "ScienceDaily",
-    "health_chosun": "헬스조선",
-    "mdtoday": "메디컬투데이",
-    "kormedi": "코메디닷컴",
-    "mohw": "보건복지부",
-    "bokjitimes": "복지타임즈",
-}
 
 PAPER_SOURCES = {"pubmed", "sciencedaily"}
 MODEL = "claude-sonnet-4-6"
@@ -153,11 +143,6 @@ async def generate(
             yield f"data: {json.dumps({'error': 'ANTHROPIC_API_KEY가 설정되지 않았습니다.'})}\n\n"
         return StreamingResponse(error_stream(), media_type="text/event-stream")
 
-    from generator.prompt_builder import build
-    from generator.deduplicator import deduplicate
-    from storage.supabase_client import get_articles_by_topic
-
-    # 중복 제거 여유분을 위해 limit×2 조회 후 유사 기사 제거 → 상위 limit개 사용
     raw_articles = get_articles_by_topic(
         topic, days=days, limit=limit * 2,
         start_date=start_date, end_date=end_date,
@@ -213,8 +198,6 @@ async def get_articles_api(
         return JSONResponse(status_code=401, content={"error": "인증이 필요합니다."})
 
     limit = min(limit, 100)
-
-    from storage.supabase_client import get_articles
 
     source_filter = None
     if type == "paper":

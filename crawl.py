@@ -1,11 +1,12 @@
 import logging
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
 
-from crawlers.base_crawler import BaseCrawler
+from crawlers.base_crawler import BaseCrawler, RawArticle
 from crawlers.rss_crawler import RSSCrawler
 from crawlers.html_crawler import KDCACrawler, NHISCrawler, SNUHCrawler, MOHWCrawler
 from crawlers.international_crawler import WHOCrawler
@@ -23,8 +24,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 소스명 → 전용 크롤러 클래스 등록
-# 새 크롤러 추가 시 여기에 한 줄만 추가하면 됨
 CRAWLER_REGISTRY: dict[str, type[BaseCrawler]] = {
     "kdca": KDCACrawler,
     "who": WHOCrawler,
@@ -34,65 +33,50 @@ CRAWLER_REGISTRY: dict[str, type[BaseCrawler]] = {
 }
 
 
+@lru_cache(maxsize=1)
 def load_config() -> dict:
     config_path = Path(__file__).parent / "config.yml"
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def process_articles(raw_articles: list, min_score: float) -> tuple[int, int]:
+def process_articles(raw_articles: list[RawArticle], min_score: float) -> tuple[int, int]:
     """수집된 기사 필터링 후 Supabase에 저장. 반환: (저장된 수, 건너뛴 수)"""
-    saved = 0
-    skipped = 0
+    saved = skipped = 0
 
     for raw in raw_articles:
-        if isinstance(raw, dict):
-            url = raw.get("url", "")
-            title = raw.get("title", "")
-            content = raw.get("content", "")
-            source = raw.get("source", "")
-            published_at = raw.get("published_at")
-        else:
-            url = raw.url
-            title = raw.title
-            content = raw.content
-            source = raw.source
-            published_at = raw.published_at
-
-        if not url or not title:
+        if not raw.url or not raw.title:
             skipped += 1
             continue
 
-        title_hash = make_title_hash(title)
-        if is_duplicate(url, title_hash):
+        title_hash = make_title_hash(raw.title)
+        if is_duplicate(raw.url, title_hash):
             skipped += 1
             continue
 
-        # 1단계: 키워드 분류 (제목 중심)
-        topic, keywords, keyword_score = classify(title, content)
+        topic, keywords, keyword_score_val = classify(raw.title, raw.content)
         if not topic:
             skipped += 1
             continue
 
-        # 2단계: HF Zero-shot으로 시니어 관련성 검증
-        if not is_senior_relevant(topic, title, content):
+        if not is_senior_relevant(topic, raw.title, raw.content):
             skipped += 1
             continue
 
-        score = quality_score(source, content, published_at, keyword_score)
+        score = quality_score(raw.source, raw.content, raw.published_at, keyword_score_val)
         if score < min_score:
             skipped += 1
             continue
 
         article = Article(
-            url=url,
-            title=title,
-            content=content,
-            source=source,
+            url=raw.url,
+            title=raw.title,
+            content=raw.content,
+            source=raw.source,
             topic_category=topic,
             keywords=keywords,
             quality_score=score,
-            published_at=published_at,
+            published_at=raw.published_at,
             title_hash=title_hash,
         )
         if save_article(article):
@@ -117,26 +101,20 @@ def run_source(source: dict, min_score: float) -> tuple[int, int]:
 def main():
     config = load_config()
     min_score = config["quality"]["min_score"]
+    total_saved = total_skipped = 0
 
-    total_saved = 0
-    total_skipped = 0
-
-    # RSS + HTML 소스 통합 처리
-    all_sources = config["sources"]["rss"] + config["sources"]["html"]
-    for source in all_sources:
+    for source in config["sources"]["rss"] + config["sources"]["html"]:
         if not source.get("enabled"):
             continue
         saved, skipped = run_source(source, min_score)
         total_saved += saved
         total_skipped += skipped
 
-    # PubMed API (별도 클라이언트)
     pubmed_enabled = any(
         s.get("enabled") for s in config["sources"]["api"] if s["name"] == "pubmed"
     )
     if pubmed_enabled:
-        raw_articles = pubmed_run()
-        saved, skipped = process_articles(raw_articles, min_score)
+        saved, skipped = process_articles(pubmed_run(), min_score)
         total_saved += saved
         total_skipped += skipped
         logger.info(f"[pubmed] 저장: {saved}건 / 건너뜀: {skipped}건")

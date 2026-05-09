@@ -2,13 +2,37 @@ import time
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
+
+
+def parse_rss_date(entry) -> Optional[datetime]:
+    """feedparser entry에서 발행일 파싱. 모든 크롤러 공용.
+
+    1차: feedparser가 UTC로 정규화한 published_parsed (struct_time) 사용.
+    2차: raw 문자열 → RFC 2822 파싱 폴백.
+    """
+    for field in ("published_parsed", "updated_parsed"):
+        parsed = entry.get(field)
+        if parsed:
+            try:
+                return datetime(*parsed[:6], tzinfo=timezone.utc)
+            except Exception:
+                continue
+    for field in ("published", "updated"):
+        value = entry.get(field)
+        if value:
+            try:
+                return parsedate_to_datetime(value).astimezone(timezone.utc)
+            except Exception:
+                continue
+    return None
 
 
 @dataclass

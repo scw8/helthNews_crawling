@@ -1,11 +1,9 @@
 import logging
-from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 from typing import Optional
 
 import feedparser
 
-from crawlers.base_crawler import BaseCrawler
+from crawlers.base_crawler import BaseCrawler, parse_rss_date
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +23,10 @@ class RSSCrawler(BaseCrawler):
         items = []
 
         for entry in feed.entries:
-            published_at = self._parse_date(entry)
             items.append({
                 "url": entry.get("link", ""),
                 "title": entry.get("title", "").strip(),
-                "published_at": published_at,
+                "published_at": parse_rss_date(entry),
             })
 
         return items
@@ -60,23 +57,6 @@ class RSSCrawler(BaseCrawler):
             if body and len(body.get_text(strip=True)) > 200:
                 return self._clean_text(body)
 
-        return None
-
-    def _parse_date(self, entry) -> Optional[datetime]:
-        for field in ("published_parsed", "updated_parsed"):
-            parsed = entry.get(field)
-            if parsed:
-                try:
-                    return datetime(*parsed[:6], tzinfo=timezone.utc)
-                except Exception:
-                    continue
-        for field in ("published", "updated"):
-            value = entry.get(field)
-            if value:
-                try:
-                    return parsedate_to_datetime(value).astimezone(timezone.utc)
-                except Exception:
-                    continue
         return None
 
     def _clean_text(self, tag) -> str:

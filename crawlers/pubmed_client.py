@@ -2,11 +2,14 @@ import os
 import logging
 import time
 from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 
 import requests
 import yaml
-from pathlib import Path
+
+from crawlers.base_crawler import RawArticle
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +17,7 @@ PUBMED_ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 PUBMED_EFETCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
 
+@lru_cache(maxsize=1)
 def load_config() -> dict:
     config_path = Path(__file__).parent.parent / "config.yml"
     with open(config_path, "r", encoding="utf-8") as f:
@@ -118,7 +122,7 @@ def _build_journal_query(term: str, journals: list[str]) -> str:
     return f"({term}) AND ({journal_filter})"
 
 
-def run() -> list[dict]:
+def run() -> list[RawArticle]:
     """
     PubMed 2단계 검색:
       1차 — 상위 저널(NEJM·Lancet·JAMA·BMJ·AIM) 한정 검색
@@ -137,18 +141,22 @@ def run() -> list[dict]:
     top_journals = api_config.get("top_journals", [])
     min_top = api_config.get("min_top_journal_results", 3)
 
-    all_articles = []
+    all_articles: list[RawArticle] = []
     seen_urls: set[str] = set()
 
     def _collect(pmids: list[str]) -> None:
         for article in fetch_abstracts(pmids, api_key):
             if article["url"] not in seen_urls:
                 seen_urls.add(article["url"])
-                article["source"] = "pubmed"
-                all_articles.append(article)
+                all_articles.append(RawArticle(
+                    url=article["url"],
+                    title=article["title"],
+                    content=article["content"],
+                    source="pubmed",
+                    published_at=article["published_at"],
+                ))
 
     for term in search_terms:
-        # ── 1차: 상위 저널 한정 검색 ──────────────────────────
         if top_journals:
             journal_query = _build_journal_query(term, top_journals)
             logger.info(f"[pubmed] 1차(상위 저널) 검색: {term}")
@@ -161,14 +169,12 @@ def run() -> list[dict]:
                 continue
 
             remaining = max_results - len(top_pmids)
-            logger.info(f"[pubmed] 상위 저널 {len(top_pmids)}건 (기준 {min_top}건 미만) → 일반 검색으로 {remaining}건 보완")
+            logger.info(f"[pubmed] 상위 저널 {len(top_pmids)}건 미만 → 일반 검색으로 {remaining}건 보완")
         else:
             remaining = max_results
 
-        # ── 2차: 일반 검색으로 부족분 보완 ───────────────────
         logger.info(f"[pubmed] 2차(일반) 검색: {term}")
-        general_pmids = search_ids(term, remaining, api_key)
-        _collect(general_pmids)
+        _collect(search_ids(term, remaining, api_key))
         time.sleep(0.5)
 
     logger.info(f"[pubmed] 완료: {len(all_articles)}건 수집")

@@ -1,17 +1,22 @@
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
 load_dotenv()
 
+# 싱글톤 — 프로세스당 한 번만 생성
+_client: Optional[Client] = None
+
 
 def get_client() -> Client:
-    url = os.environ["SUPABASE_URL"]
-    key = os.environ["SUPABASE_KEY"]
-    return create_client(url, key)
+    global _client
+    if _client is None:
+        _client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+    return _client
 
 
 @dataclass
@@ -28,10 +33,7 @@ class Article:
 
 
 def save_article(article: Article) -> bool:
-    """
-    기사 저장. URL 중복이면 저장하지 않고 False 반환.
-    """
-    client = get_client()
+    """기사 저장. URL 중복이면 저장하지 않고 False 반환."""
     data = {
         "url": article.url,
         "title": article.title,
@@ -44,29 +46,19 @@ def save_article(article: Article) -> bool:
         "title_hash": article.title_hash,
     }
     try:
-        client.table("articles").insert(data).execute()
+        get_client().table("articles").insert(data).execute()
         return True
     except Exception:
-        # URL unique 제약 위반 = 중복 기사
         return False
 
 
 def is_duplicate(url: str, title_hash: str) -> bool:
-    """
-    URL 또는 제목 해시가 이미 DB에 있으면 True.
-    """
+    """URL 또는 제목 해시가 이미 DB에 있으면 True."""
     client = get_client()
-
-    # URL 체크
-    result = client.table("articles").select("id").eq("url", url).execute()
-    if result.data:
+    if client.table("articles").select("id").eq("url", url).execute().data:
         return True
-
-    # 제목 해시 체크
-    result = client.table("articles").select("id").eq("title_hash", title_hash).execute()
-    if result.data:
+    if client.table("articles").select("id").eq("title_hash", title_hash).execute().data:
         return True
-
     return False
 
 
@@ -77,27 +69,19 @@ def get_articles_by_topic(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
 ) -> list[dict]:
-    """
-    스크립트 생성 시 사용. 주제별 기사를 품질 점수 높은 순으로 조회.
-    start_date/end_date(ISO 문자열)가 있으면 days 대신 사용.
-    """
-    from datetime import timedelta
-    client = get_client()
-
+    """스크립트 생성용. 주제별 기사를 품질 점수 높은 순으로 조회."""
     query = (
-        client.table("articles")
+        get_client().table("articles")
         .select("id, title, content, source, keywords, quality_score, published_at")
         .eq("topic_category", topic)
         .order("quality_score", desc=True)
         .limit(limit)
     )
-
     if start_date and end_date:
         query = query.gte("published_at", start_date).lte("published_at", end_date)
     else:
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         query = query.gte("crawled_at", since)
-
     return query.execute().data
 
 
@@ -110,16 +94,12 @@ def get_articles(
     limit: int = 50,
     offset: int = 0,
 ) -> list[dict]:
-    """
-    기사/논문 리딩 페이지용. 필터 조건에 맞는 기사 목록 조회.
-    """
-    client = get_client()
+    """기사/논문 리딩 페이지용. 필터 조건에 맞는 기사 목록 조회."""
     query = (
-        client.table("articles")
+        get_client().table("articles")
         .select("id, title, content, source, topic_category, published_at, quality_score, url")
         .order("published_at", desc=True)
     )
-
     if topic:
         query = query.eq("topic_category", topic)
     if sources:
@@ -130,19 +110,5 @@ def get_articles(
         query = query.gte("published_at", start_date)
     if end_date:
         query = query.lte("published_at", end_date)
-
     query = query.range(offset, offset + limit - 1)
     return query.execute().data
-
-
-def save_script(topic: str, script_content: str, source_ids: list[int], file_path: str):
-    """
-    생성된 스크립트 이력 저장.
-    """
-    client = get_client()
-    client.table("generated_scripts").insert({
-        "topic": topic,
-        "script_content": script_content,
-        "source_ids": source_ids,
-        "file_path": file_path,
-    }).execute()

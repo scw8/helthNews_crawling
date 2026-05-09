@@ -1,20 +1,15 @@
 import logging
-from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 from typing import Optional
 
 import feedparser
 
-from crawlers.base_crawler import BaseCrawler
+from crawlers.base_crawler import BaseCrawler, parse_rss_date
 
 logger = logging.getLogger(__name__)
 
 
 class WHOCrawler(BaseCrawler):
-    """
-    세계보건기구 (WHO) RSS 크롤러.
-    https://www.who.int/news
-    """
+    """세계보건기구 (WHO) RSS 크롤러."""
 
     FEED_URL = "https://www.who.int/rss-feeds/news-english.xml"
 
@@ -23,16 +18,14 @@ class WHOCrawler(BaseCrawler):
 
     def fetch_list(self) -> list[dict]:
         feed = feedparser.parse(self.FEED_URL)
-        items = []
-
-        for entry in feed.entries:
-            items.append({
+        return [
+            {
                 "url": entry.get("link", ""),
                 "title": entry.get("title", "").strip(),
-                "published_at": self._parse_date(entry),
-            })
-
-        return items
+                "published_at": parse_rss_date(entry),
+            }
+            for entry in feed.entries
+        ]
 
     def fetch_content(self, url: str) -> Optional[str]:
         soup = self.get(url)
@@ -52,20 +45,3 @@ class WHOCrawler(BaseCrawler):
 
         lines = [line.strip() for line in body.get_text().splitlines() if line.strip()]
         return "\n".join(lines)
-
-    def _parse_date(self, entry) -> Optional[datetime]:
-        for field in ("published_parsed", "updated_parsed"):
-            parsed = entry.get(field)
-            if parsed:
-                try:
-                    return datetime(*parsed[:6], tzinfo=timezone.utc)
-                except Exception:
-                    continue
-        for field in ("published", "updated"):
-            value = entry.get(field)
-            if value:
-                try:
-                    return parsedate_to_datetime(value).astimezone(timezone.utc)
-                except Exception:
-                    continue
-        return None
