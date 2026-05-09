@@ -54,12 +54,18 @@ class WHOCrawler(BaseCrawler):
         return "\n".join(lines)
 
     def _parse_date(self, entry) -> Optional[datetime]:
-        for field in ["published", "updated"]:
+        for field in ("published_parsed", "updated_parsed"):
+            parsed = entry.get(field)
+            if parsed:
+                try:
+                    return datetime(*parsed[:6], tzinfo=timezone.utc)
+                except Exception:
+                    continue
+        for field in ("published", "updated"):
             value = entry.get(field)
             if value:
                 try:
-                    dt = parsedate_to_datetime(value)
-                    return dt.astimezone(timezone.utc).replace(tzinfo=timezone.utc)
+                    return parsedate_to_datetime(value).astimezone(timezone.utc)
                 except Exception:
                     continue
         return None

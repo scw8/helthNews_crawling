@@ -14,7 +14,18 @@ _DATE_RE = re.compile(r'(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})')
 
 
 def _parse_rss_date(entry) -> Optional[datetime]:
-    """feedparser entry에서 발행일 파싱 (RFC 2822 형식)."""
+    """feedparser entry에서 발행일 파싱.
+
+    1차: feedparser가 이미 UTC로 정규화한 published_parsed 사용 (가장 신뢰도 높음).
+    2차: raw 문자열 → RFC 2822 파싱 (구형 피드 대비 폴백).
+    """
+    for field in ("published_parsed", "updated_parsed"):
+        parsed = entry.get(field)
+        if parsed:
+            try:
+                return datetime(*parsed[:6], tzinfo=timezone.utc)
+            except Exception:
+                continue
     for field in ("published", "updated"):
         value = entry.get(field)
         if value:
